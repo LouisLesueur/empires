@@ -23,7 +23,7 @@ class Grid:
                 if Map[i,j] == 0:
                     self.parcels[i].append(blanckParcel)
                 else:
-                    self.parcels[i].append(Parcel(Map_R0[i,j], Map_Rmax[i,j], 1, 10000, Map_r[i,j], greenCiv))
+                    self.parcels[i].append(Parcel(Map_R0[i,j], Map_Rmax[i,j], 1, 1000, Map_r[i,j], greenCiv))
                     for k in range(len(civ)):
                         if [i,j] == civ[k].capital:
                             self.parcels[i][j].set_civ(civ[k], 50)
