@@ -96,7 +96,7 @@ N2[20, 120] = 20 #Barbarians
 
 sim = Grid(np.array([I_R0]), #R
            np.array([N1,N2]),
-           np.array([[0,0.04],  #alpha
+           np.array([[0,0.4],  #alpha
                      [0.03,0]]),
            np.array([1]), #w
            np.array([0.2, 0.1]), #c
@@ -140,13 +140,23 @@ def colormap(I, N, colors):
 I = plt.imread('maps/europe.png')
 print(I)
 
+
+good = np.zeros_like(sim.pi[0])
+good[np.where(sim.pi[0]>5)] = 1
+bad = np.zeros_like(sim.pi[0])
+bad[np.where(sim.pi[1]>5)] = 2
 fig = plt.figure()
 ax = plt.axes()
-im=plt.imshow(sim.pi[0]+sim.pi[1])
+im=plt.imshow(good+bad)
 
 def animate(i):
+
+    good = np.zeros_like(sim.pi[0])
+    good[np.where(sim.pi[0]>5)] = 1
+    bad = np.zeros_like(sim.pi[0])
+    bad[np.where(sim.pi[1]>5)] = 2
     sim.update()
-    im.set_array(sim.pi[0]+sim.pi[1])
+    im.set_array(good+bad)
     return [im]
 
 writer = PillowWriter(fps=25)
