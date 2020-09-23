@@ -26,7 +26,7 @@ def lap(A):
 
 
 class Grid:
-    def __init__(self, rho_0, pi_0, alpha, w, c, gamma, a, Kpi, r, Krho, bound):
+    def __init__(self, rho_0, pi_0, alpha, w, c, gamma, a, Kpi, r, Krho, D_0, bound):
         self.rho = rho_0
         self.pi = pi_0
         self.alpha = alpha
@@ -37,6 +37,7 @@ class Grid:
         self.Kpi = Kpi
         self.r = r
         self.Krho = Krho
+        self.D_0 = D_0
         self.bound = bound
         self.area = np.sum(bound)
 
@@ -44,9 +45,8 @@ class Grid:
 
     def update(self):
 
-        def DN(r, rr):
-            res = np.sum(ro for ro in self.rho)
-            return (res/np.linalg.norm(res))*np.exp(-r)
+        def DN(r, i):
+            return self.D_0[i]*np.exp(-r)
 
         for i in range(self.pi.shape[0]):
             conso = self.c[i]*np.sum([self.w[j]*self.a[i,j]*self.rho[j] for j in range(self.rho.shape[0])], axis=0)
@@ -55,7 +55,7 @@ class Grid:
 
             self.repro[i] = conso+death+war
 
-            migration =  grad_grad(DN(self.repro[i], np.sum(ro for ro in self.rho)),self.pi[i]) + DN(self.repro[i], np.sum(ro for ro in self.rho))*lap(self.pi[i])
+            migration =  grad_grad(DN(self.repro[i], i),self.pi[i]) + DN(self.repro[i], i)*lap(self.pi[i])
             #migration = DN(self.pi[i], self.Kpi[i])*lap(self.pi[i])
 
             self.pi[i] += self.pi[i]*self.repro[i] + migration
@@ -106,6 +106,7 @@ sim = Grid(np.array([I_R0]), #R
            np.array([30, 40]), #KN
            np.array([I_r]), #r
            np.array([2*I_R0]), #KR
+           np.array([0.01, 0.02]), #D_0
            I) #KR
 
 #Tmax = 1500
@@ -138,7 +139,6 @@ def colormap(I, N, colors):
 
 
 I = plt.imread('maps/europe.png')
-print(I)
 
 
 good = np.zeros_like(sim.pi[0])
