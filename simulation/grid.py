@@ -1,111 +1,56 @@
 import numpy as np
-from simulation.civ import Civ
-from simulation.parcel import Parcel
+from simulation.mathutils import grad_grad, lap
+
 
 class Grid:
-    def __init__(self, Map, Map_r, Map_R0, Map_Rmax, civ):
-        self.Nx = Map.shape[0]
-        self.Ny = Map.shape[1]
+    def __init__(self, rho_0, pi_0, alpha, w, c, gamma, a, Kpi, r, Krho, DN_0, DR_0, bound):
+        self.rho = rho_0
+        self.pi = pi_0
+        self.alpha = alpha
+        self.w = w
+        self.c = c
+        self.gamma = gamma
+        self.a = a
+        self.Kpi = Kpi
+        self.r = r
+        self.Krho = Krho
+        self.DN_0 = DN_0
+        self.DR_0 = DR_0
+        self.bound = bound
+        self.area = np.sum(bound)
 
-        greenCiv = Civ(0, 0, 0, 0 ,None, np.array([0,1,0]))
-        waterCiv = Civ(0, 0, 0, 0 ,None, np.array([0,1,1]))
-
-        blanckParcel = Parcel(0, 0, 0, 0, 0, waterCiv)
-        blanckParcel.block()
-        blanckParcel.P = -100
-
-        self.parcels = []
-
-        for i in range(self.Nx):
-            self.parcels.append([])
-            for j in range(self.Ny):
-
-                if Map[i,j] == 0:
-                    self.parcels[i].append(blanckParcel)
-                else:
-                    self.parcels[i].append(Parcel(Map_R0[i,j], Map_Rmax[i,j], 1, 1000, Map_r[i,j], greenCiv))
-                    for k in range(len(civ)):
-                        if [i,j] == civ[k].capital:
-                            self.parcels[i][j].set_civ(civ[k], 50)
-
-
-    def transfer_pop(self, pos_from, pos_to, fact=0.5):
-        Ptot = fact*self.parcels[pos_from[0]][pos_from[1]].P
-
-        if self.parcels[pos_to[0]][pos_to[1]].is_occupied:
-            if self.parcels[pos_to[0]][pos_to[1]].civ == self.parcels[pos_from[0]][pos_from[1]].civ:
-                self.parcels[pos_from[0]][pos_from[1]].add_pop(-Ptot)
-                self.parcels[pos_to[0]][pos_to[1]].add_pop(Ptot)
-                self.parcels[pos_to[0]][pos_to[1]].is_at_war = False
-                self.parcels[pos_from[0]][pos_from[1]].is_at_war = False
-            else:
-                self.parcels[pos_to[0]][pos_to[1]].is_at_war = True
-                self.parcels[pos_from[0]][pos_from[1]].is_at_war = True
-        else:
-            self.parcels[pos_from[0]][pos_from[1]].add_pop(-Ptot)
-            self.parcels[pos_to[0]][pos_to[1]].set_civ(self.parcels[pos_from[0]][pos_from[1]].civ, Ptot)
-
-    def transfer_res(self, pos_from, pos_to, fact=0.25):
-        Rtot = fact*self.parcels[pos_from[0]][pos_from[1]].R
-
-        if self.parcels[pos_to[0]][pos_to[1]].civ == self.parcels[pos_from[0]][pos_from[1]].civ:
-            self.parcels[pos_from[0]][pos_from[1]].add_resource(-Rtot)
-            self.parcels[pos_to[0]][pos_to[1]].add_resource(Rtot)
-            self.parcels[pos_to[0]][pos_to[1]].is_at_war = False
-            self.parcels[pos_from[0]][pos_from[1]].is_at_war = False
-        else:
-            self.parcels[pos_to[0]][pos_to[1]].is_at_war = True
-            self.parcels[pos_from[0]][pos_from[1]].is_at_war = True
-
-
-
-    def best_neighbor(self, pos, d):
-        neighbors = []
-        bary = self.parcels[pos[0]][pos[1]].civ.capital
-        ind = []
-        for k in range(-d, d+1):
-            for l in range(-d, d+1):
-                if [k,l] != [0,0] and 0<=pos[0]+k<self.Nx and 0<=pos[1]+l<self.Ny:
-                    if not(self.parcels[pos[0]+k][pos[1]+l].is_collapsing) and not(self.parcels[pos[0]+k][pos[1]+l].is_overloaded) and self.parcels[pos[0]+k][pos[1]+l].is_occupable:
-                        dist = np.linalg.norm(np.array([pos[0]+k,pos[1]+l])-bary)
-                        neighbors.append(self.parcels[pos[0]+k][pos[1]+l].R/(dist**2))
-                        ind.append([pos[0]+k,pos[1]+l])
-                    elif self.parcels[pos[0]+k][pos[1]+l].is_occupied and self.parcels[pos[0]+k][pos[1]+l].civ != self.parcels[pos[0]][pos[1]].civ:
-                        dist = np.linalg.norm(np.array([pos[0]+k,pos[1]+l])-bary)
-                        neighbors.append(self.parcels[pos[0]+k][pos[1]+l].R/(dist**2))
-                        ind.append([pos[0]+k,pos[1]+l])
-
-        if neighbors != []:
-            idx = np.argmax(neighbors)
-            return ind[idx]
-
-        else:
-            return False
-
+        self.repro = np.zeros_like(self.pi)
 
     def update(self):
-        trans_res = []
-        trans_pop = []
 
-        for i in range(self.Nx):
-            for j in range(self.Ny):
-                self.parcels[i][j].update()
+        def DN(r, i):
+            return self.DN_0[i]*np.exp(-r)
 
-                if self.parcels[i][j].is_overloaded:
-                    best_pos = self.best_neighbor([i,j], self.parcels[i][j].civ.d)
-                    if best_pos:
-                        trans_pop.append([[i,j], best_pos])
+        for i in range(self.pi.shape[0]):
+            conso = self.c[i]*np.sum([self.w[j]*self.a[i,j]*self.rho[j] for j in range(self.rho.shape[0])], axis=0)
+            death = -self.gamma[i]
+            war = -np.sum([self.alpha[i,k]*self.pi[k] for k in range(self.pi.shape[0])], axis=0)/self.Kpi[i]
 
-                elif self.parcels[i][j].is_collapsing:
-                    best_pos = self.best_neighbor([i,j], self.parcels[i][j].civ.d)
-                    if best_pos:
-                        if self.parcels[best_pos[0]][best_pos[1]].is_occupied:
-                            trans_res.append([[i,j], best_pos])
-                        else:
-                            trans_pop.append([[i,j], best_pos])
+            self.repro[i] = conso+death+war
 
-        for ind in trans_res:
-            self.transfer_res(*ind)
+            migration =  grad_grad(DN(self.repro[i], i),self.pi[i]) + DN(self.repro[i], i)*lap(self.pi[i])
+            #migration = DN(self.pi[i], self.Kpi[i])*lap(self.pi[i])
 
-        for ind in trans_pop:
-            self.transfer_pop(*ind)
+            self.pi[i] += self.pi[i]*self.repro[i] + migration
+            self.pi[i] *= self.bound
+
+        def DR(r):
+            return self.DR_0[i]*np.exp(r)
+
+        for j in range(self.rho.shape[0]):
+            renew = self.r[j]
+            thresh = -(self.r[j]*self.rho[j])/self.Krho[j]
+            conso = -np.sum([self.a[k,j]*self.pi[k] for k in range(self.pi.shape[0])], axis=0)
+
+            repro_res = (renew+thresh+conso)
+            exchange = np.sum([grad_grad(DR(self.repro[i]), self.rho[j]) + DR(self.repro[i])*lap(self.rho[j]) for i in range(self.pi.shape[0])], axis=0)
+            #exchange = np.sum(DR(self), self.rho[j])*lap(self.rho[j]), axis=0)
+            #exchange = 0
+
+            self.rho[j] += self.rho[j]*repro_res + exchange
+            self.rho[j] *= self.bound
