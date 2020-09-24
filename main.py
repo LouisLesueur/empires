@@ -37,11 +37,11 @@ sim = Grid(np.array([I_R0]), #R
            np.array([[0.005],
                      [0.006],
                      [0.007],
-                     [0.008]]), #a
+                     [0.002]]), #a
            np.array([30, 40, 50, 40]), #KN
            np.array([I_r]), #r
            np.array([2*I_R0]), #KR
-           np.array([0.01, 0.01, 0.0005, 0.004]), #DN_0
+           np.array([0.01, 0.01, 0.0005, 0.0000004]), #DN_0
            np.array([2, 10, 0.005, 0.01]), #DR_0
            I) #KR
 
@@ -64,9 +64,9 @@ sim = Grid(np.array([I_R0]), #R
 
 
 
-def colormap(pi, color):
+def colormap(pi, color, max):
     out = color*np.ones((pi.shape[0], pi.shape[1], 3))
-    fact = pi/np.max(pi)
+    fact = pi/max
     out[:,:,0] *= fact
     out[:,:,1] *= fact
     out[:,:,2] *= fact
@@ -78,25 +78,50 @@ I = plt.imread('maps/europe.png')
 colors = np.array([[0,0,1],[0,1,0],[1,0,0], [1,0,1]])
 out = np.zeros((sim.pi[0].shape[0], sim.pi[0].shape[1], 3))
 for i in range(len(sim.pi)):
-    out += colormap(sim.pi[i], colors[i])
+    out += colormap(sim.pi[i], colors[i], np.max(sim.pi))
 
-fig = plt.figure()
-ax = plt.axes()
+fig = plt.figure(figsize=(10,5))
+fig.tight_layout(pad=10) # Or equivalently,  "plt.tight_layout()"
+
+ax1 = fig.add_subplot(1, 2, 1)
 im=plt.imshow(out)
+
+ax2 = fig.add_subplot(1, 2, 2)
+im2, = plt.plot([],[],label="pop1")
+im21, = plt.plot([],[],label="pop2")
+im22, = plt.plot([],[],label="pop3")
+im23, = plt.plot([],[],label="ressources")
+plt.legend()
+
+plt.ylim(0,1)
+out2 = []
+out21 = []
+out22 = []
+out23 = []
 
 
 def animate(i):
-
     out = np.zeros((sim.pi[0].shape[0], sim.pi[0].shape[1], 3))
     for k in range(len(sim.pi)):
-        out += colormap(sim.pi[k], colors[k])
-    for l in range(7):
+        out += colormap(sim.pi[k], colors[k], np.max(sim.pi))
+    for l in range(10):
         sim.update()
     im.set_array(out)
+    out2.append(np.sum(sim.pi[0]))
+    out21.append(np.sum(sim.pi[1]))
+    out22.append(np.sum(sim.pi[2]))
+    out23.append(np.sum(sim.rho[0]))
+
+    im2.set_data(np.arange(i+2), out2/np.max(out2))
+    im21.set_data(np.arange(i+2), out21/np.max(out21))
+    im22.set_data(np.arange(i+2), out22/np.max(out22))
+    im23.set_data(np.arange(i+2), out23/np.max(out23))
+
+    ax2.set_xlim(0,i)
     print(f"step {i}\r", sep=' ', end='', flush=True)
     return [im]
 
 writer = PillowWriter(fps=25)
-anim = FuncAnimation(fig, animate, frames = 500, interval = 50)
+anim = FuncAnimation(fig, animate, frames = 400, interval = 50)
 anim.save('out.gif', writer=writer)
 #plt.show()
