@@ -11,7 +11,7 @@ I_r = plt.imread('maps/europe_r.png')
 I_R0 = plt.imread('maps/europe_r.png')
 
 I = 0.2989 * I[:,:,0] + 0.5870 * I[:,:,1] + 0.1140 * I[:,:,2]
-I_r = (0.2989 * I_r[:,:,0] + 0.5870 * I_r[:,:,1] + 0.1140 * I_r[:,:,2])*0.08
+I_r = (0.2989 * I_r[:,:,0] + 0.5870 * I_r[:,:,1] + 0.1140 * I_r[:,:,2])*0.04
 I_R0 = (0.2989 * I_R0[:,:,0] + 0.5870 * I_R0[:,:,1] + 0.1140 * I_R0[:,:,2])*100+1
 
 N1 = np.zeros_like(I)
@@ -27,22 +27,21 @@ N4[25, 100] = 20  #Russe
 
 sim = Grid(np.array([I_R0]), #R
            np.array([N1,N2,N3,N4]),
-           np.array([[0,   0.4,0.2, 0.1],  #alpha
+           np.array([[0,   0.04,0.02, 0.01],  #alpha
                      [0.03,0,  0.02, 0.01],
-                     [0.04, 0.2, 0, 0.5],
-                     [0.01, 0.04, 0.05, 0]]),
+                     [0.04, 0.02, 0, 0.05],
+                     [0.01, 0.004, 0.05, 0]]),
            np.array([1]), #w
            np.array([0.15, 0.15, 0.15, 0.15]), #c
            np.array([0.02*np.ones(N1.shape), 0.05*np.ones(N2.shape), 0.03*np.ones(N2.shape), 0.02*np.ones(N2.shape)]), #gamma
-           np.array([[0.005],
+           np.array([[0.003],
                      [0.006],
-                     [0.007],
-                     [0.002]]), #a
+                     [0.005],
+                     [0.003]]), #a
            np.array([30, 40, 50, 40]), #KN
            np.array([I_r]), #r
            np.array([2*I_R0]), #KR
-           np.array([0.01, 0.01, 0.0005, 0.0000004]), #DN_0
-           np.array([2, 10, 0.005, 0.01]), #DR_0
+           np.array([0.01, 0.01, 0.0005, 0.0006]), #DN_0
            I) #KR
 
 #Tmax = 1500
@@ -87,10 +86,11 @@ ax1 = fig.add_subplot(1, 2, 1)
 im=plt.imshow(out)
 
 ax2 = fig.add_subplot(1, 2, 2)
-im2, = plt.plot([],[],label="pop1")
-im21, = plt.plot([],[],label="pop2")
-im22, = plt.plot([],[],label="pop3")
-im23, = plt.plot([],[],label="ressources")
+im2, = plt.plot([],[],label="pop1",color = colors[0])
+im21, = plt.plot([],[],label="pop2",color = colors[1])
+im22, = plt.plot([],[],label="pop3",color = colors[2])
+im23, = plt.plot([],[],label="pop4",color = colors[3])
+im24, = plt.plot([],[],label="ressources")
 plt.legend()
 
 plt.ylim(0,1)
@@ -98,6 +98,7 @@ out2 = []
 out21 = []
 out22 = []
 out23 = []
+out24 = []
 
 
 def animate(i):
@@ -110,18 +111,20 @@ def animate(i):
     out2.append(np.sum(sim.pi[0]))
     out21.append(np.sum(sim.pi[1]))
     out22.append(np.sum(sim.pi[2]))
-    out23.append(np.sum(sim.rho[0]))
+    out23.append(np.sum(sim.pi[3]))
+    out24.append(np.sum(sim.rho[0]))
 
     im2.set_data(np.arange(i+2), out2/np.max(out2))
     im21.set_data(np.arange(i+2), out21/np.max(out21))
     im22.set_data(np.arange(i+2), out22/np.max(out22))
     im23.set_data(np.arange(i+2), out23/np.max(out23))
+    im24.set_data(np.arange(i+2), out24/np.max(out24))
 
     ax2.set_xlim(0,i)
     print(f"step {i}\r", sep=' ', end='', flush=True)
     return [im]
 
 writer = PillowWriter(fps=25)
-anim = FuncAnimation(fig, animate, frames = 400, interval = 50)
-anim.save('out.gif', writer=writer)
-#plt.show()
+anim = FuncAnimation(fig, animate, frames = 10000, interval = 50)
+#anim.save('out.gif', writer=writer)
+plt.show()
