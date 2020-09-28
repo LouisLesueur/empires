@@ -28,13 +28,13 @@ N4[25, 100] = 20  #Russe
 sim = Grid(np.array([I_R0]), #R
            np.array([N1,N2,N3,N4]),
            np.array([0.05*np.ones(N1.shape), 0.05*np.ones(N2.shape), 0.05*np.ones(N2.shape), 0.05*np.ones(N2.shape)]), #gamma
-           np.array([[0.005],
-                     [0.005],
-                     [0.005],
-                     [0.005]]), #a
+           np.array([[0.00002],
+                     [0.00002],
+                     [0.00002],
+                     [0.00002]]), #a
            np.array([I_r]), #r
            np.array([2*I_R0]), #KR
-           np.array([0.05, 0.05, 0.05, 0.05]), #DN_0
+           np.array([0.1, 0.1, 0.1, 0.1]), #DN_0
            I) #KR
 
 #Tmax = 1500

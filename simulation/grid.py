@@ -7,6 +7,7 @@ class Grid:
         self.rho = rho_0
         self.pi = pi_0
         self.gamma = gamma
+
         self.a = a
         self.r = r
         self.K = K
@@ -33,7 +34,6 @@ class Grid:
             self.repro[i] = conso+death
 
             migration =  grad_grad(DN(self.repro[i], i),self.pi[i]) + DN(self.repro[i], i)*lap(self.pi[i])
-            shift = 10*grad_grad(self.pi[i], np.sum(self.rho, axis=0)) + self.pi[i]*lap(np.sum(self.rho, axis=0))
 
             self.pi[i] += self.pi[i]*self.repro[i] + migration
             self.pi[i] *= self.bound
@@ -49,8 +49,8 @@ class Grid:
             self.rho[j] += self.rho[j]*repro_res
             self.rho[j] *= self.bound
 
-    def evolve(self, a, D):
-        #self.a += 0.000001*np.random.random_sample(self.a.shape)
-        #self.DN_0 += 0.00001*np.random.random_sample(self.DN_0.shape)
-        self.a = a
-        self.DN_0 = D
+        i = np.random.randint(0, self.pi.shape[0])
+        for j in range(self.rho.shape[0]):
+            self.a[i,j] = (1/np.sum(self.pi[i])) * ((np.sum(self.r[j])/2)-0.5*np.sum([self.a[k,j]*np.sum(self.pi[k]) for k in range(self.pi.shape[0]) if k != i]))
+            self.a[i,j] *= 0.00001
+            print(self.a[i,j])
