@@ -11,7 +11,7 @@ I_r = plt.imread('maps/europe_r.png')
 I_R0 = plt.imread('maps/europe_r.png')
 
 I = 0.2989 * I[:,:,0] + 0.5870 * I[:,:,1] + 0.1140 * I[:,:,2]
-I_r = (0.2989 * I_r[:,:,0] + 0.5870 * I_r[:,:,1] + 0.1140 * I_r[:,:,2])*0.04
+I_r = (0.2989 * I_r[:,:,0] + 0.5870 * I_r[:,:,1] + 0.1140 * I_r[:,:,2])*0.05
 I_R0 = (0.2989 * I_R0[:,:,0] + 0.5870 * I_R0[:,:,1] + 0.1140 * I_R0[:,:,2])*100+1
 
 N1 = np.zeros_like(I)
@@ -27,19 +27,14 @@ N4[25, 100] = 20  #Russe
 
 sim = Grid(np.array([I_R0]), #R
            np.array([N1,N2,N3,N4]),
-           np.array([[0, 0.04, 0.02, 0.01],  #alpha
-                     [0.03, 0, 0.02, 0.01],
-                     [0.04, 0.02, 0, 0.05],
-                     [0.01, 0.004,0.05, 0]]),
-           np.array([0.02*np.ones(N1.shape), 0.05*np.ones(N2.shape), 0.03*np.ones(N2.shape), 0.02*np.ones(N2.shape)]), #gamma
-           np.array([[0.003],
-                     [0.006],
+           np.array([0.05*np.ones(N1.shape), 0.05*np.ones(N2.shape), 0.05*np.ones(N2.shape), 0.05*np.ones(N2.shape)]), #gamma
+           np.array([[0.005],
                      [0.005],
-                     [0.003]]), #a
-           np.array([30, 40, 50, 40]), #KN
+                     [0.005],
+                     [0.005]]), #a
            np.array([I_r]), #r
            np.array([2*I_R0]), #KR
-           np.array([0.01, 0.01, 0.0000005, 0.0006]), #DN_0
+           np.array([0.05, 0.05, 0.05, 0.05]), #DN_0
            I) #KR
 
 #Tmax = 1500
