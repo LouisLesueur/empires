@@ -60,13 +60,14 @@ class Grid:
 
         for i in range(self.pi.shape[0]):
             for k in range(self.pi.shape[0]):
-                lamb = 10000
-                PI = [np.sum(self.pi[k]) for k in range(self.pi.shape[0])]
-                self.alpha[i,k] = PI[k]/(2*lamb*self.Kpi[i])
+                if ( i != k):
+                    PI = [np.sum(self.pi[k]) for k in range(self.pi.shape[0])]
+                    self.alpha[i,k] = PI[k]/self.Kpi[i]
+            self.alpha[i,:] /= np.linalg.norm(self.alpha[i,:])
 
 
             for j in range(self.rho.shape[0]):
-                lambada = 100000000
+                lambada = 0.00001
                 PI = [np.sum(self.pi[k])*self.area for k in range(self.pi.shape[0])]
                 R = [np.sum(self.r[k])*self.area for k in range(self.rho.shape[0])]
                 K_mean = np.sum(self.K[j]*self.area)
