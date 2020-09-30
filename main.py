@@ -11,7 +11,7 @@ I_r = plt.imread('maps/europe_r.png')
 I_R0 = plt.imread('maps/europe_r.png')
 
 I = 0.2989 * I[:,:,0] + 0.5870 * I[:,:,1] + 0.1140 * I[:,:,2]
-I_r = (0.2989 * I_r[:,:,0] + 0.5870 * I_r[:,:,1] + 0.1140 * I_r[:,:,2])*0.05
+I_r = (0.2989 * I_r[:,:,0] + 0.5870 * I_r[:,:,1] + 0.1140 * I_r[:,:,2])*0.000005
 I_R0 = (0.2989 * I_R0[:,:,0] + 0.5870 * I_R0[:,:,1] + 0.1140 * I_R0[:,:,2])*100+1
 
 N1 = np.zeros_like(I)
@@ -19,22 +19,27 @@ N2 = np.zeros_like(I)
 N3 = np.zeros_like(I)
 N4 = np.zeros_like(I)
 
-N1[50, 62] = 20  #Rome
-N2[30, 83] = 20 #Barbarians
-N3[34, 44] = 20  #Paris
-N4[25, 100] = 20  #Russe
+N1[50, 62] = 1  #Rome
+N2[30, 83] = 1 #Barbarians
+N3[34, 44] = 1  #Paris
+N4[25, 100] = 1  #Russe
 
 
 sim = Grid(np.array([I_R0]), #R
            np.array([N1,N2,N3,N4]),
-           np.array([0.05*np.ones(N1.shape), 0.05*np.ones(N2.shape), 0.05*np.ones(N2.shape), 0.05*np.ones(N2.shape)]), #gamma
-           np.array([[0.00002],
-                     [0.00002],
-                     [0.00002],
-                     [0.00002]]), #a
+           np.array([[0,   0.04,0.02, 0.01],  #alpha
+                     [0.03,0,  0.02, 0.01],
+                     [0.04, 0.02, 0, 0.05],
+                     [0.01, 0.004, 0.05, 0]]),
+           np.array([0.005*np.ones(N1.shape), 0.005*np.ones(N2.shape), 0.005*np.ones(N2.shape), 0.005*np.ones(N2.shape)]), #gamma
+           np.array([[0.0002],
+                     [0.0002],
+                     [0.0002],
+                     [0.0002]]), #a
+           np.array([5, 5, 5, 5]), #KN
            np.array([I_r]), #r
-           np.array([2*I_R0]), #KR
-           np.array([0.1, 0.1, 0.1, 0.1]), #DN_0
+           np.array([I_R0]), #KR
+           np.array([0.01, 0.01, 0.01, 0.01]), #DN_0
            I) #KR
 
 #Tmax = 1500
@@ -54,11 +59,12 @@ sim = Grid(np.array([I_R0]), #R
 
 #plt.plot(R_tot, label='Ressources')
 
-
-
 def colormap(pi, color, max):
     out = color*np.ones((pi.shape[0], pi.shape[1], 3))
     fact = pi/max
+    #fact[np.where(pi>0.001)] = 1
+
+
     out[:,:,0] *= fact
     out[:,:,1] *= fact
     out[:,:,2] *= fact
@@ -70,7 +76,7 @@ I = plt.imread('maps/europe.png')
 colors = np.array([[0,0,1],[0,1,0],[1,0,0], [1,0,1]])
 out = np.zeros((sim.pi[0].shape[0], sim.pi[0].shape[1], 3))
 for i in range(len(sim.pi)):
-    out += colormap(sim.pi[i], colors[i], np.max(sim.pi))
+    out += colormap(sim.pi[i], colors[i], 1)
 
 fig = plt.figure(figsize=(10,5))
 fig.tight_layout(pad=10) # Or equivalently,  "plt.tight_layout()"
@@ -97,7 +103,7 @@ out24 = []
 def animate(i):
     out = np.zeros((sim.pi[0].shape[0], sim.pi[0].shape[1], 3))
     for k in range(len(sim.pi)):
-        out += colormap(sim.pi[k], colors[k], np.max(sim.pi))
+        out += colormap(sim.pi[k], colors[k], np.max(sim.pi[k]))
     for l in range(10):
         sim.update()
     im.set_array(out)

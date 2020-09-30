@@ -3,14 +3,16 @@ from simulation.mathutils import grad_grad, lap
 
 
 class Grid:
-    def __init__(self, rho_0, pi_0, gamma, a, r, K, DN_0, bound):
+    def __init__(self, rho_0, pi_0, alpha,  gamma, a, Kpi, r, K, DN_0, bound):
         self.rho = rho_0
         self.pi = pi_0
+        self.alpha = alpha
         self.gamma = gamma
 
         self.a = a
         self.r = r
         self.K = K
+        self.Kpi = Kpi
         self.DN_0 = DN_0
         self.bound = bound
         self.area = np.sum(bound)
@@ -25,15 +27,16 @@ class Grid:
         fluctuations = 2*(1-np.sin(100*self.time))
 
         def DN(r, i):
-            return self.DN_0[i]*np.exp(-r)
+            return self.DN_0[i]*np.exp(-(r/np.linalg.norm(r)))
 
         for i in range(self.pi.shape[0]):
             conso = np.sum([self.a[i,j]*self.rho[j] for j in range(self.rho.shape[0])], axis=0)
             death = -self.gamma[i]
+            war = 0
 
-            self.repro[i] = conso+death
+            self.repro[i] = conso+death+war
 
-            migration =  grad_grad(DN(self.repro[i], i),self.pi[i]) + DN(self.repro[i], i)*lap(self.pi[i])
+            migration =  DN(self.repro[i], i)*lap(self.pi[i])
 
             self.pi[i] += self.pi[i]*self.repro[i] + migration
             self.pi[i] *= self.bound
@@ -49,8 +52,23 @@ class Grid:
             self.rho[j] += self.rho[j]*repro_res
             self.rho[j] *= self.bound
 
-        i = np.random.randint(0, self.pi.shape[0])
-        for j in range(self.rho.shape[0]):
-            self.a[i,j] = (1/np.sum(self.pi[i])) * ((np.sum(self.r[j])/2)-0.5*np.sum([self.a[k,j]*np.sum(self.pi[k]) for k in range(self.pi.shape[0]) if k != i]))
-            self.a[i,j] *= 0.00001
-            print(self.a[i,j])
+
+        def masking(i):
+            mask = np.zeros_like(self.pi[i])
+            mask[np.where(self.pi[i]>0.01)]=1
+            return mask
+
+        for i in range(self.pi.shape[0]):
+            for k in range(self.pi.shape[0]):
+                lamb = 10000
+                PI = [np.sum(self.pi[k]) for k in range(self.pi.shape[0])]
+                self.alpha[i,k] = PI[k]/(2*lamb*self.Kpi[i])
+
+
+            for j in range(self.rho.shape[0]):
+                lambada = 100000000
+                PI = [np.sum(self.pi[k])*self.area for k in range(self.pi.shape[0])]
+                R = [np.sum(self.r[k])*self.area for k in range(self.rho.shape[0])]
+                K_mean = np.sum(self.K[j]*self.area)
+
+                self.a[i,j] = R[j]/(2*lambada*K_mean)
