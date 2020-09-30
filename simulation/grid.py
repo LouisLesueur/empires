@@ -37,8 +37,9 @@ class Grid:
             self.repro[i] = conso+death+war
 
             migration =  DN(self.repro[i], i)*lap(self.pi[i])
+            shift = 0.001*self.pi[i]*lap(np.sum(self.rho, axis=0))
 
-            self.pi[i] += self.pi[i]*self.repro[i] + migration
+            self.pi[i] += self.pi[i]*self.repro[i] + migration+shift
             self.pi[i] *= self.bound
 
 
