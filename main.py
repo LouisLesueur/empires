@@ -27,16 +27,12 @@ N4[25, 100] = 1  #Russe
 
 sim = Grid(np.array([I_R0]), #R
            np.array([N1,N2,N3,N4]),
-           np.array([[0,   0.04,0.02, 0.01],  #alpha
-                     [0.03,0,  0.02, 0.01],
-                     [0.04, 0.02, 0, 0.05],
-                     [0.01, 0.004, 0.05, 0]]),
+
            np.array([0.005*np.ones(N1.shape), 0.005*np.ones(N2.shape), 0.005*np.ones(N2.shape), 0.005*np.ones(N2.shape)]), #gamma
-           np.array([[0.0002],
-                     [0.0002],
-                     [0.0002],
-                     [0.0002]]), #a
-           np.array([5, 5, 5, 5]), #KN
+           np.array([[0.0002*np.ones(N1.shape)],
+                     [0.0002*np.ones(N1.shape)],
+                     [0.0002*np.ones(N1.shape)],
+                     [0.0002*np.ones(N1.shape)]]), #a
            np.array([I_r]), #r
            np.array([I_R0]), #KR
            np.array([0.01, 0.01, 0.01, 0.01]), #DN_0
@@ -61,7 +57,7 @@ sim = Grid(np.array([I_R0]), #R
 
 def colormap(pi, color, max):
     out = color*np.ones((pi.shape[0], pi.shape[1], 3))
-    fact = pi/max
+    fact = 10*pi/max
     #fact[np.where(pi>0.001)] = 1
 
 
