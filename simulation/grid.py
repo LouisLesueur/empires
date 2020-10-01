@@ -36,9 +36,8 @@ class Grid:
             migration =  DN(self.repro[i], i)*lap(self.pi[i])
             shift = 0.001*self.pi[i]*lap(np.sum(self.rho, axis=0))
 
-            self.pi[i] += self.pi[i]*self.repro[i] + migration+shift
+            self.pi[i] += self.pi[i]*self.repro[i] + migration
             self.pi[i] *= self.bound
-
 
         for j in range(self.rho.shape[0]):
             renew = self.r[j]
@@ -51,15 +50,11 @@ class Grid:
             self.rho[j] *= self.bound
 
 
-        def masking(i):
-            mask = np.zeros_like(self.pi[i])
-            mask[np.where(self.pi[i]>0.01)]=1
-            return mask
 
-
-
+        for i in range(self.pi.shape[0]):
             for j in range(self.rho.shape[0]):
-                lambada = 10000000
+                lambada = 10
                 fac = 0.5*(1/(lambada + self.K[j]*(self.pi[i]/(self.r[j]+1e-6))))
                 self.a[i,j] = fac*(self.K[j]-np.sum([(self.K[j])*self.a[k,j]*self.pi[k]/(self.r[j]+1e-6) for k in range(self.rho.shape[0]) if k != i]))
                 self.a[i,j] *= self.bound
+                self.a[i,j] /= np.linalg.norm(self.a[i,j])*20

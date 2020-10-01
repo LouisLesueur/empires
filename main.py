@@ -11,7 +11,7 @@ I_r = plt.imread('maps/europe_r.png')
 I_R0 = plt.imread('maps/europe_r.png')
 
 I = 0.2989 * I[:,:,0] + 0.5870 * I[:,:,1] + 0.1140 * I[:,:,2]
-I_r = (0.2989 * I_r[:,:,0] + 0.5870 * I_r[:,:,1] + 0.1140 * I_r[:,:,2])*0.000005
+I_r = (0.2989 * I_r[:,:,0] + 0.5870 * I_r[:,:,1] + 0.1140 * I_r[:,:,2])*0.005
 I_R0 = (0.2989 * I_R0[:,:,0] + 0.5870 * I_R0[:,:,1] + 0.1140 * I_R0[:,:,2])*100+1
 
 N1 = np.zeros_like(I)
@@ -28,14 +28,14 @@ N4[25, 100] = 1  #Russe
 sim = Grid(np.array([I_R0]), #R
            np.array([N1,N2,N3,N4]),
 
-           np.array([0.005*np.ones(N1.shape), 0.005*np.ones(N2.shape), 0.005*np.ones(N2.shape), 0.005*np.ones(N2.shape)]), #gamma
+           np.array([0.05*np.ones(N1.shape), 0.05*np.ones(N2.shape), 0.05*np.ones(N2.shape), 0.05*np.ones(N2.shape)]), #gamma
            np.array([[0.0002*np.ones(N1.shape)],
                      [0.0002*np.ones(N1.shape)],
                      [0.0002*np.ones(N1.shape)],
                      [0.0002*np.ones(N1.shape)]]), #a
            np.array([I_r]), #r
            np.array([I_R0]), #KR
-           np.array([0.01, 0.01, 0.01, 0.01]), #DN_0
+           np.array([0.05, 0.05, 0.05, 0.05]), #DN_0
            I) #KR
 
 #Tmax = 1500
@@ -57,7 +57,7 @@ sim = Grid(np.array([I_R0]), #R
 
 def colormap(pi, color, max):
     out = color*np.ones((pi.shape[0], pi.shape[1], 3))
-    fact = 10*pi/max
+    fact = pi/max
     #fact[np.where(pi>0.001)] = 1
 
 
@@ -78,7 +78,7 @@ fig = plt.figure(figsize=(10,5))
 fig.tight_layout(pad=10) # Or equivalently,  "plt.tight_layout()"
 
 ax1 = fig.add_subplot(1, 2, 1)
-im=plt.imshow(out)
+im=plt.imshow((out*255).astype(np.uint8))
 
 ax2 = fig.add_subplot(1, 2, 2)
 im2, = plt.plot([],[],label="pop1",color = colors[0])
@@ -99,10 +99,10 @@ out24 = []
 def animate(i):
     out = np.zeros((sim.pi[0].shape[0], sim.pi[0].shape[1], 3))
     for k in range(len(sim.pi)):
-        out += colormap(sim.pi[k], colors[k], np.max(sim.pi[k]))
-    for l in range(10):
+        out += colormap(sim.pi[k], colors[k], np.max(sim.pi))
+    for _ in range(10):
         sim.update()
-    im.set_array(out)
+    im.set_array((out*255).astype(np.uint8))
     out2.append(np.sum(sim.pi[0]))
     out21.append(np.sum(sim.pi[1]))
     out22.append(np.sum(sim.pi[2]))
@@ -119,7 +119,7 @@ def animate(i):
     print(f"step {i}\r", sep=' ', end='', flush=True)
     return [im]
 
-writer = PillowWriter(fps=25)
+writer = PillowWriter(fps=15)
 anim = FuncAnimation(fig, animate, frames = 10000, interval = 50)
 #anim.save('out.gif', writer=writer)
 plt.show()
