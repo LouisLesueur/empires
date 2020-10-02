@@ -34,9 +34,9 @@ class Grid:
             self.repro[i] = conso+death
 
             migration =  DN(self.repro[i], i)*lap(self.pi[i])
-            shift = 0.001*self.pi[i]*lap(np.sum(self.rho, axis=0))
+            shift = 0.0001*self.pi[i]*lap(np.sum(self.rho, axis=0))
 
-            self.pi[i] += self.pi[i]*self.repro[i] + migration
+            self.pi[i] += self.pi[i]*self.repro[i] + migration+shift
             self.pi[i] *= self.bound
 
         for j in range(self.rho.shape[0]):
@@ -54,7 +54,7 @@ class Grid:
         for i in range(self.pi.shape[0]):
             for j in range(self.rho.shape[0]):
 
-                lambada = 0.01
+                lambada = 1000
                 #self.a[i,j] += lambada*(self.K[j]-np.sum([(self.K[j]/(self.r[j]+1e-6))*self.a[k,j]*self.pi[k] for k in range(self.rho.shape[0]) if k != i])-2*self.a[i,j]*(self.K[j]/(self.r[j]+1e-6))*self.pi[i])
                 self.a[i,j] += lambada*self.rho[j]
                 self.a[i,j] *= self.bound
