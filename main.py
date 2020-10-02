@@ -52,7 +52,7 @@ sim = Grid(np.array([I_R0]), #R
 
 def colormap(pi, color, max):
     out = color*np.ones((pi.shape[0], pi.shape[1], 3))
-    fact = pi/max
+    fact = (1-np.exp(-pi/max))
     #fact[np.where(pi>0.001)] = 1
 
 
@@ -103,8 +103,6 @@ def animate(i):
     out22.append(np.sum(sim.pi[2]))
     out23.append(np.sum(sim.pi[3]))
     out24.append(np.sum(sim.rho[0]))
-
-    print(np.min(sim.a[1,0]), np.max(sim.a[1,0]), np.mean(sim.a[1,0]))
 
     im2.set_data(np.arange(i+2), out2/np.max(out2))
     im21.set_data(np.arange(i+2), out21/np.max(out21))
