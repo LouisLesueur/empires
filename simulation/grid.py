@@ -54,9 +54,7 @@ class Grid:
         for i in range(self.pi.shape[0]):
             for j in range(self.rho.shape[0]):
 
-                lambada = 1000
+                lambada = 0.00000001
                 #self.a[i,j] += lambada*(self.K[j]-np.sum([(self.K[j]/(self.r[j]+1e-6))*self.a[k,j]*self.pi[k] for k in range(self.rho.shape[0]) if k != i])-2*self.a[i,j]*(self.K[j]/(self.r[j]+1e-6))*self.pi[i])
                 self.a[i,j] += lambada*self.rho[j]
                 self.a[i,j] *= self.bound
-        self.a[np.where(self.a > 0.0002)] = 0.0002
-        self.a[np.where(self.a < -0.0002)] = -0.0002
