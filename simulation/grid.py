@@ -53,8 +53,8 @@ class Grid:
 
         for i in range(self.pi.shape[0]):
             for j in range(self.rho.shape[0]):
-                lambada = 10
+                lambada = 0.01
                 fac = 0.5*(1/(lambada + self.K[j]*(self.pi[i]/(self.r[j]+1e-6))))
                 self.a[i,j] = fac*(self.K[j]-np.sum([(self.K[j])*self.a[k,j]*self.pi[k]/(self.r[j]+1e-6) for k in range(self.rho.shape[0]) if k != i]))
                 self.a[i,j] *= self.bound
-                self.a[i,j] /= np.linalg.norm(self.a[i,j])*20
+                self.a[i,j] /= np.linalg.norm(self.a[i,j])
