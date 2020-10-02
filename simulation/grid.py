@@ -3,12 +3,12 @@ from simulation.mathutils import grad_grad, lap
 
 
 class Grid:
-    def __init__(self, rho_0, pi_0,  gamma, a, r, K, DN_0, bound):
+    def __init__(self, rho_0, pi_0,  gamma, r, K, DN_0, bound):
         self.rho = rho_0
         self.pi = pi_0
         self.gamma = gamma
 
-        self.a = a
+        self.a = np.zeros((self.pi.shape[0], self.rho.shape[0], self.pi.shape[1], self.pi.shape[2]))
         self.r = r
         self.K = K
         self.DN_0 = DN_0
@@ -53,8 +53,10 @@ class Grid:
 
         for i in range(self.pi.shape[0]):
             for j in range(self.rho.shape[0]):
+
                 lambada = 0.01
-                fac = 0.5*(1/(lambada + self.K[j]*(self.pi[i]/(self.r[j]+1e-6))))
-                self.a[i,j] = fac*(self.K[j]-np.sum([(self.K[j])*self.a[k,j]*self.pi[k]/(self.r[j]+1e-6) for k in range(self.rho.shape[0]) if k != i]))
+                #self.a[i,j] += lambada*(self.K[j]-np.sum([(self.K[j]/(self.r[j]+1e-6))*self.a[k,j]*self.pi[k] for k in range(self.rho.shape[0]) if k != i])-2*self.a[i,j]*(self.K[j]/(self.r[j]+1e-6))*self.pi[i])
+                self.a[i,j] += lambada*self.rho[j]
                 self.a[i,j] *= self.bound
-                self.a[i,j] /= np.linalg.norm(self.a[i,j])
+        self.a[np.where(self.a > 0.0002)] = 0.0002
+        self.a[np.where(self.a < -0.0002)] = -0.0002

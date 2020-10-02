@@ -11,7 +11,7 @@ I_r = plt.imread('maps/europe_r.png')
 I_R0 = plt.imread('maps/europe_r.png')
 
 I = 0.2989 * I[:,:,0] + 0.5870 * I[:,:,1] + 0.1140 * I[:,:,2]
-I_r = (0.2989 * I_r[:,:,0] + 0.5870 * I_r[:,:,1] + 0.1140 * I_r[:,:,2])*0.005
+I_r = (0.2989 * I_r[:,:,0] + 0.5870 * I_r[:,:,1] + 0.1140 * I_r[:,:,2])*0.0005
 I_R0 = (0.2989 * I_R0[:,:,0] + 0.5870 * I_R0[:,:,1] + 0.1140 * I_R0[:,:,2])*100+1
 
 N1 = np.zeros_like(I)
@@ -22,20 +22,15 @@ N4 = np.zeros_like(I)
 N1[50, 62] = 1  #Rome
 N2[30, 83] = 1 #Barbarians
 N3[34, 44] = 1  #Paris
-N4[25, 100] = 1  #Russe
+N4[10, 134] = 1  #Russe
 
 
 sim = Grid(np.array([I_R0]), #R
            np.array([N1,N2,N3,N4]),
-
-           np.array([0.05*np.ones(N1.shape), 0.05*np.ones(N2.shape), 0.05*np.ones(N2.shape), 0.05*np.ones(N2.shape)]), #gamma
-           np.array([[0.0002*np.ones(N1.shape)],
-                     [0.0002*np.ones(N1.shape)],
-                     [0.0002*np.ones(N1.shape)],
-                     [0.0002*np.ones(N1.shape)]]), #a
+           0.005*np.array([np.ones(N1.shape), np.ones(N2.shape), np.ones(N2.shape), np.ones(N2.shape)]), #gamma
            np.array([I_r]), #r
            np.array([I_R0]), #KR
-           np.array([0.05, 0.05, 0.05, 0.05]), #DN_0
+           0.05*np.array([1, 1, 1, 1]), #DN_0
            I) #KR
 
 #Tmax = 1500
@@ -98,7 +93,7 @@ out24 = []
 
 def animate(i):
     out = np.zeros((sim.pi[0].shape[0], sim.pi[0].shape[1], 3))
-    for k in range(len(sim.pi)):
+    for k in range(sim.pi.shape[0]):
         out += colormap(sim.pi[k], colors[k], np.max(sim.pi))
     for _ in range(10):
         sim.update()
@@ -108,6 +103,8 @@ def animate(i):
     out22.append(np.sum(sim.pi[2]))
     out23.append(np.sum(sim.pi[3]))
     out24.append(np.sum(sim.rho[0]))
+
+    print(np.min(sim.a[1,0]), np.max(sim.a[1,0]), np.mean(sim.a[1,0]))
 
     im2.set_data(np.arange(i+2), out2/np.max(out2))
     im21.set_data(np.arange(i+2), out21/np.max(out21))
