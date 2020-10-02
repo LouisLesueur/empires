@@ -11,7 +11,7 @@ I_r = plt.imread('maps/europe_r.png')
 I_R0 = plt.imread('maps/europe_r.png')
 
 I = 0.2989 * I[:,:,0] + 0.5870 * I[:,:,1] + 0.1140 * I[:,:,2]
-I_r = (0.2989 * I_r[:,:,0] + 0.5870 * I_r[:,:,1] + 0.1140 * I_r[:,:,2])*0.005
+I_r = (0.2989 * I_r[:,:,0] + 0.5870 * I_r[:,:,1] + 0.1140 * I_r[:,:,2])*0.05
 I_R0 = (0.2989 * I_R0[:,:,0] + 0.5870 * I_R0[:,:,1] + 0.1140 * I_R0[:,:,2])*100+1
 
 N1 = np.zeros_like(I)
@@ -30,6 +30,7 @@ sim = Grid(np.array([I_R0]), #R
            0.01*np.array([np.ones(N1.shape), np.ones(N2.shape), np.ones(N2.shape), np.ones(N2.shape)]), #gamma
            np.array([I_r]), #r
            np.array([I_R0]), #KR
+           10*np.array([1, 1, 1, 1]), #KN
            0.005*np.array([1, 1, 1, 1]), #DN_0
            I) #KR
 
