@@ -1,0 +1,76 @@
+{
+  "dx": 1.6666666666666,
+  "terrain":
+  [
+    {
+      "type": "plains",
+      "prosperity": 0.8,
+      "color": [86, 124, 27]
+    },
+    {
+      "type": "farmlands",
+      "prosperity": 1,
+      "color": [138, 11, 26]
+    },
+    {
+      "type": "coastal_desert",
+      "prosperity": 0.4,
+      "color": [130, 158, 75]
+    },
+    {
+      "type": "desert",
+      "prosperity": 0,
+      "color": [206, 169, 99]
+    },
+    {
+      "type": "sandy_mountain",
+      "prosperity": 0.2,
+      "color": [112, 74, 31]
+    },
+    {
+      "type": "steppe",
+      "prosperity": 0.5,
+      "color": [255, 186, 0]
+    },
+    {
+      "type": "arctic",
+      "prosperity": 0,
+      "color": [13, 96, 62]
+    },
+    {
+      "type": "desert_mountain",
+      "prosperity": 0.1,
+      "color": [86, 46, 0]
+    },
+    {
+      "type": "forest",
+      "prosperity": 0.4,
+      "color": [0, 86, 6]
+    },
+    {
+      "type": "snowless_mountain",
+      "prosperity": 0.3,
+      "color": [65, 42, 17]
+    },
+    {
+      "type": "snow_covered_mountain",
+      "prosperity": 0.2,
+      "color": [155, 155, 155]
+    },
+    {
+      "type": "more_snow_covered_mountain",
+      "prosperity": 0.1,
+      "color": [255, 255, 255]
+    },
+    {
+      "type": "jungle",
+      "prosperity": 0.1,
+      "color": [40, 180, 149]
+    },
+    {
+      "type": "water",
+      "prosperity": 0,
+      "color": [69, 91, 186]
+    }
+  ]
+}
