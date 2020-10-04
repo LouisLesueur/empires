@@ -1,7 +1,15 @@
 # Empires
 
-A simulation of human interactions at a large scale.
+A simulation of human interactions at a large scale, using python numpy and matplotlib.
 It is a simple reaction–diffusion system based on darwinian dynamics.
+
+![](documentation/example.gif)
+
+# To-do
++ Use cuda and cupy for better perf
++ Try different solving methods to gain perfs
++ Tune parameters
++ Use more coherent game theory models 
 
 # Sources
 

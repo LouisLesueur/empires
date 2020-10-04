@@ -1,8 +1,24 @@
+"""Grid module
+
+This module combines domain, pops and resources to make the simulation
+"""
+
+
 import numpy as np
 
 
 class Grid:
+    """The grid class"""
+
     def __init__(self,  PI, RHO, Domain, dx=None):
+        """Constructor of the grid
+
+        PI -- an array of pops
+        RHO -- an array of resources
+        Domain -- The domain on which the simulation will be made
+        dx -- The sharpness of the discretization
+        """
+
         self.RHO = RHO
         self.PI = PI
         self.dom = Domain
@@ -26,8 +42,8 @@ class Grid:
 
         self.time = 0
 
-
     def update(self):
+        """Update the grid by one time step"""
 
         self.time += 1
         fluctuations = 2*(1-np.sin(100*self.time))
@@ -46,10 +62,9 @@ class Grid:
                 self.a[i,j] /= np.max(self.a[i,j])
                 self.a[i,j] *= 0.0002*self.dom.I
 
-
-
-
     def get_img(self):
+        """returns the repartition of all pops"""
+
         out = np.ones((self.dom.shape[0], self.dom.shape[1],3))
         out[:,:,0] = self.dom.I
         out[:,:,1] = self.dom.I
