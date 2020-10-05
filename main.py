@@ -25,7 +25,7 @@ while(count) < N:
 #Rome =  Pop([1189, 714], 200, [1,0,0], 0.001, 0.05, 1000, Europe.shape, Europe.area)
 #Gaule = Pop([929, 493],  200, [0,1,0], 0.001, 0.05, 1000, Europe.shape, Europe.area)
 #Grecs = Pop([1259, 966], 200, [0,0,1], 0.001, 0.05, 1000, Europe.shape, Europe.area)
-Miam =  Res(0.2, 5000, Europe.shape, Europe.area)
+Miam =  Res(0.2, 5000, 10, Europe.shape, Europe.area)
 RHO = np.array([Miam])
 sim = Grid(np.array(PI), RHO, Europe, 50)
 

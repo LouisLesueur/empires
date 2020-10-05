@@ -96,7 +96,8 @@ class Pop:
         self.repro = np.zeros(shape)
         self.color = color
         self.dx = dx
-        self.v = 0.002
+        self.v_war = 0.002
+        self.v_res = 0.002
 
     def mask(self):
         """returns a boolean mask of the occupation zone"""
@@ -129,12 +130,15 @@ class Pop:
             print("only coarser grid are authorized !")
 
     def alpha(self, u):
-        return np.exp(-(self.v-u)**2/4)
+        return np.exp(-((self.v_war-u)**2)/4)
 
-    def G(self, a, U, RHO, PI, i):
-        conso = np.sum([a[i,j]*RHO[j].rho for j in range(RHO.shape[0])], axis=0)
+    def a(self ,u):
+        return np.exp(-((self.v_res-u)**2)/4)
+
+    def G(self, U_war, U_res, RHO, PI, i):
+        conso = np.sum([self.a(U_res[j])*RHO[j].rho for j in range(RHO.shape[0])], axis=0)
         death = -self.gamma
-        war = -np.sum([self.alpha(U[i])*PI[i].pi for i in range(PI.shape[0])], axis=0)
+        war = -np.sum([self.alpha(U_war[i])*PI[i].pi for i in range(PI.shape[0])], axis=0)
         return conso+death+war
 
     def DN(self, r):
@@ -158,7 +162,7 @@ class Pop:
 class Res:
     """Resources class"""
 
-    def __init__(self, r0, KR, shape, area):
+    def __init__(self, r0, KR, u, shape, area):
         """Constructor of the class
 
         r0 -- The renewal rate of resources in best conditions (%/year)
@@ -170,6 +174,7 @@ class Res:
         self.rho = (KR/area)*np.ones(shape)
         self.r = r0*np.ones(shape)
         self.KR = KR*np.ones(shape)
+        self.u = u
 
     def tot(self, area):
         """returns the total amount of resource"""
