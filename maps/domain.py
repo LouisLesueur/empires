@@ -114,10 +114,9 @@ class Pop:
 
         return np.sum(self.mask())*(self.dx**2)
 
-    def tot(self, area):
+    def tot(self):
         """returns the total population in pop"""
-
-        return np.sum(self.pi)*area
+        return np.sum(self.pi)*self.area()
 
     def resize(self, new_dx):
         """projection on a coarser grid"""
