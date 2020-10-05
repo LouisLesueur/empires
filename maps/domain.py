@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import json
 from scipy.ndimage import gaussian_filter
-from maps.mathutils import grad_grad, lap
 from matplotlib.animation import FuncAnimation, PillowWriter
 from PIL import Image
 
@@ -97,6 +96,7 @@ class Pop:
         self.repro = np.zeros(shape)
         self.color = color
         self.dx = dx
+        self.v = 0.002
 
     def mask(self):
         """returns a boolean mask of the occupation zone"""
@@ -128,27 +128,18 @@ class Pop:
         else:
             print("only coarser grid are authorized !")
 
-    def update(self,a,RHO,PI,i):
-        """Update the population by one time step
+    def alpha(self, u):
+        return np.exp(-(self.v-u)**2/4)
 
-        a -- The interaction matrix
-        RHO -- The resources on the domain
-        PI -- All the populations on the domain
-        i -- the index of the pop in a
-        """
-
-        def DN(r):
-            """Diffusion coefficient (see Gorban and all)"""
-            return self.D*np.exp(-(r/np.linalg.norm(r)))
-
+    def G(self, a, U, RHO, PI, i):
         conso = np.sum([a[i,j]*RHO[j].rho for j in range(RHO.shape[0])], axis=0)
         death = -self.gamma
-        self.repro = conso+death
+        war = -np.sum([self.alpha(U[i])*PI[i].pi for i in range(PI.shape[0])], axis=0)
+        return conso+death+war
 
-        migration =  DN(self.repro)*lap(self.pi, self.dx)
-        shift = 0.000001*self.pi*lap(np.sum([rho.rho for rho in RHO], axis=0), self.dx)
-
-        self.pi += self.pi*self.repro + migration + shift
+    def DN(self, r):
+        """Diffusion coefficient (see Gorban and all)"""
+        return self.D*np.exp(-(r/np.linalg.norm(r)))
 
     def colorize(self):
         """Returns the colormap of occupied zones"""
@@ -194,21 +185,3 @@ class Res:
             self.KR = restrict(self.KR, old_dx, new_dx)
         else:
             print("only coarser grid are authorized !")
-
-    def update(self,fluctuations,a,RHO,PI,j):
-        """Update the population by one time step
-
-        fluctuations -- a fluctuation factor (for seasons modelization)
-        a -- The interaction matrix
-        RHO -- The resources on the domain
-        PI -- All the populations on the domain
-        j -- the index of the resource in a
-        """
-
-        renew = self.r
-        thresh = -(self.r*self.rho)/self.KR
-        conso = -np.sum([a[k,j]*PI[k].pi for k in range(PI.shape[0])], axis=0)
-
-        repro_res = (fluctuations*renew+thresh+conso)
-
-        self.rho += self.rho*repro_res
