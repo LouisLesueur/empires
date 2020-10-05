@@ -6,11 +6,11 @@ It is a simple reaction–diffusion system based on darwinian dynamics.
 ![](documentation/example.gif)
 
 # To-do
-+ Use cuda and cupy for better perf
-+ Try different solving methods to gain perfs
-+ Tune parameters
-+ Use more coherent game theory models
-+ Make a clear documentation on the maths behind the model
+- [ ] Use cuda and cupy for better perf
+- [ ] Try different solving methods to gain perfs
+- [ ] Tune parameters
+- [ ] Use more coherent game theory models
+- [ ] Make a clear documentation on the maths behind the model
 
 # Sources
 

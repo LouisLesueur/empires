@@ -19,7 +19,7 @@ while(count) < N//4:
 
     if Europe.I[i,j] != 0:
         count +=1
-        PI.append(Pop([i, j], 200, np.random.randint(255, size=3), 0.001, 0.05, 1000, Europe.shape, Europe.area))
+        PI.append(Pop([i, j], 200, np.random.randint(255, size=3), 0.001, 5, 1000, Europe.shape, Europe.area, Europe.dx))
 
 
 #Rome =  Pop([1189, 714], 200, [1,0,0], 0.001, 0.05, 1000, Europe.shape, Europe.area)
@@ -43,5 +43,5 @@ def animate(i):
 
 writer = PillowWriter(fps=15)
 anim = FuncAnimation(fig, animate, frames = 500, interval = 50)
-anim.save('out.gif', writer=writer)
+#anim.save('out.gif', writer=writer)
 plt.show()

@@ -71,17 +71,18 @@ class Domain:
 class Pop:
     """Population class"""
 
-    def __init__(self, start_loc, start_number, color, gamma, D0, KN, shape, area):
+    def __init__(self, start_loc, start_number, color, gamma, D0, KN, shape, area, dx):
         """Population constructor
 
         start_loc -- array with starting location coordonates
         start_number -- initial population density (pop/km^2)
         color -- array with the color of the pop on the map (RGB)
         gamma -- death rate density (%/years)
-        D0 -- diffusion coefficient in the best conditions (km/years)
+        D0 -- diffusion coefficient in the best conditions (km^2/years)
         KN -- carrying capacity in the best conditions (pop/km)
         shape -- dimensions of the domain (int, int)
         area -- area of the domain (km^2)
+        dx -- space step of the domain (km)
         """
 
         self.pi = np.zeros(shape)
@@ -95,6 +96,7 @@ class Pop:
         self.KN = KN*np.ones(shape) / area
         self.repro = np.zeros(shape)
         self.color = color
+        self.dx = dx
 
     def mask(self):
         """returns a boolean mask of the occupation zone"""
@@ -103,25 +105,26 @@ class Pop:
         out[np.where(self.pi == 0)] = 1
         return True*out
 
-    def area(self, dx):
+    def area(self):
         """returns the area occupied in km^2"""
 
-        return np.sum(self.mask())*(dx**2)
+        return np.sum(self.mask())*(self.dx**2)
 
     def tot(self, area):
         """returns the total population in pop"""
 
         return np.sum(self.pi)*area
 
-    def resize(self, new_dx, old_dx):
+    def resize(self, new_dx):
         """projection on a coarser grid"""
 
-        if new_dx > old_dx:
-            self.pi = restrict(self.pi, old_dx, new_dx)
-            self.gamma = restrict(self.gamma, old_dx, new_dx)
-            self.D = restrict(self.D, old_dx, new_dx)
-            self.KN = restrict(self.KN, old_dx, new_dx)
-            self.repro = restrict(self.repro, old_dx, new_dx)
+        if new_dx > self.dx:
+            self.pi = restrict(self.pi, self.dx, new_dx)
+            self.gamma = restrict(self.gamma, self.dx, new_dx)
+            self.D = restrict(self.D, self.dx, new_dx)
+            self.KN = restrict(self.KN, self.dx, new_dx)
+            self.repro = restrict(self.repro, self.dx, new_dx)
+            self.dx = new_dx
         else:
             print("only coarser grid are authorized !")
 
@@ -142,8 +145,8 @@ class Pop:
         death = -self.gamma
         self.repro = conso+death
 
-        migration =  DN(self.repro)*lap(self.pi)
-        shift = 0.000001*self.pi*lap(np.sum([rho.rho for rho in RHO], axis=0))
+        migration =  DN(self.repro)*lap(self.pi, self.dx)
+        shift = 0.000001*self.pi*lap(np.sum([rho.rho for rho in RHO], axis=0), self.dx)
 
         self.pi += self.pi*self.repro + migration + shift
 
@@ -201,7 +204,7 @@ class Res:
         PI -- All the populations on the domain
         j -- the index of the resource in a
         """
-        
+
         renew = self.r
         thresh = -(self.r*self.rho)/self.KR
         conso = -np.sum([a[k,j]*PI[k].pi for k in range(PI.shape[0])], axis=0)

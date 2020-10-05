@@ -34,7 +34,7 @@ class Grid:
         if dx != None:
             self.dom.resize(dx)
             for pi in self.PI:
-                pi.resize(dx, self.dom.dx_start)
+                pi.resize(dx)
             for rho in self.RHO:
                 rho.resize(dx, self.dom.dx_start)
 
