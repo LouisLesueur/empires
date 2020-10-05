@@ -19,7 +19,7 @@ while(count) < N:
 
     if Europe.I[i,j] != 0:
         count +=1
-        PI.append(Pop([i, j], 200, np.random.randint(255, size=3), 0.001, 1, 1000, Europe.shape, Europe.area, Europe.dx))
+        PI.append(Pop([i, j], 200, np.random.randint(255, size=3), 0.001, 10, 1000, 0.00002, 0.02, Europe.shape, Europe.area, Europe.dx))
 
 
 #Rome =  Pop([1189, 714], 200, [1,0,0], 0.001, 0.05, 1000, Europe.shape, Europe.area)
@@ -27,7 +27,7 @@ while(count) < N:
 #Grecs = Pop([1259, 966], 200, [0,0,1], 0.001, 0.05, 1000, Europe.shape, Europe.area)
 Miam =  Res(0.2, 5000, Europe.shape, Europe.area)
 RHO = np.array([Miam])
-sim = Grid(np.array(PI), RHO, Europe, 50)
+sim = Grid(np.array(PI), RHO, Europe, 20)
 
 fig = plt.figure(figsize=(10,5))
 

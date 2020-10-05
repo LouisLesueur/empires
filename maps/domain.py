@@ -70,7 +70,7 @@ class Domain:
 class Pop:
     """Population class"""
 
-    def __init__(self, start_loc, start_number, color, gamma, D0, KN, shape, area, dx):
+    def __init__(self, start_loc, start_number, color, gamma, D0, KN, c, drift0, shape, area, dx):
         """Population constructor
 
         start_loc -- array with starting location coordonates
@@ -79,6 +79,8 @@ class Pop:
         gamma -- death rate density (%/years)
         D0 -- diffusion coefficient in the best conditions (km^2/years)
         KN -- carrying capacity in the best conditions (pop/km)
+        c -- resource transformation capacity ( pop / res)
+        drift0 -- base resource attraction (km^2 / res*year)
         shape -- dimensions of the domain (int, int)
         area -- area of the domain (km^2)
         dx -- space step of the domain (km)
@@ -97,6 +99,8 @@ class Pop:
         self.color = color
         self.dx = dx
         self.v = 0.002
+        self.c = c
+        self.drift0 = drift0
 
     def mask(self):
         """returns a boolean mask of the occupation zone"""
@@ -132,7 +136,7 @@ class Pop:
         return np.exp(-(self.v-u)**2/4)
 
     def G(self, a, U, RHO, PI, i):
-        conso = np.sum([a[i,j]*RHO[j].rho for j in range(RHO.shape[0])], axis=0)
+        conso = self.c*np.sum([a[i,j]*RHO[j].rho for j in range(RHO.shape[0])], axis=0)
         death = -self.gamma
         war = -np.sum([self.alpha(U[i])*PI[i].pi for i in range(PI.shape[0])], axis=0)
         return conso+death+war
