@@ -24,7 +24,7 @@ while(count) < N:
 Miam =  Res(0.2, 5000, 0.01, Europe.shape, Europe.area)
 
 RHO = np.array([Miam])
-sim = Grid(np.array(PI), RHO, Europe, 40)
+sim = Grid(np.array(PI), RHO, Europe, 50)
 
 fig = plt.figure(figsize=(10,5))
 

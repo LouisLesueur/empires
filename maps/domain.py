@@ -140,7 +140,7 @@ class Pop:
     def G(self, U, RHO, PI, i):
         conso = self.c*np.sum([RHO[j].prop*RHO[j].rho for j in range(RHO.shape[0])], axis=0)
         death = -self.gamma
-        war = -np.sum([self.alpha(U[i])*PI[i].pi for i in range(PI.shape[0])], axis=0)
+        war = -self.gamma*np.sum([self.alpha(U[i])*PI[i].pi for i in range(PI.shape[0])], axis=0)/(self.K()+1e-6)
         return conso+death+war
 
     def DN(self, r):
@@ -153,7 +153,7 @@ class Pop:
         out = self.color*np.ones((self.pi.shape[0], self.pi.shape[1], 3))
         #fact = (1-np.exp(-self.pi/np.max(self.pi)))
         fact = np.zeros_like(self.pi)
-        fact[np.where(self.pi>0.3*np.max(self.pi))]=1
+        fact[np.where(self.pi>0.2*np.max(self.pi))]=1
 
         out[:,:,0] *= fact
         out[:,:,1] *= fact
