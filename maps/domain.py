@@ -135,11 +135,14 @@ class Pop:
         return np.exp(-(self.v-u)**2/4)
 
 
-    def G(self, U, RHO, PI, i):
+    def G(self, U, RHO, PI):
         conso = self.c*np.sum([RHO[j].prop*RHO[j].rho for j in range(RHO.shape[0])], axis=0)
         death = -self.gamma
         war = -self.gamma*np.sum([self.alpha(U[i])*PI[i].pi for i in range(PI.shape[0])], axis=0)/(self.KN+1e-6)
         return conso+death+war
+
+    def partG(self, U, RHO, PI):
+        return self.gamma*np.sum([((self.v-U[i])/2)*self.alpha(U[i])*PI[i].pi for i in range(PI.shape[0])])/(self.KN+1e-6)
 
     def DN(self, r):
         """Diffusion coefficient (see Gorban and all)"""

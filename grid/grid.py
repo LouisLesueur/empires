@@ -51,13 +51,13 @@ class Grid:
 
         for i,pi in enumerate(self.PI):
 
-            pi.repro = pi.G(U,self.RHO,self.PI, i)
+            pi.repro = pi.G(U,self.RHO,self.PI)
             migration = pi.DN(pi.repro)*lap(pi.pi, pi.dx)
             shift = pi.drift0*pi.pi*lap(np.sum([rho.rho for rho in self.RHO], axis=0), pi.dx)
 
             pi.pi += pi.pi*pi.repro + migration + shift
 
-            pi.v += np.sum([((pi.v-U[i])/2)*pi.alpha(U[i]) for i in range(self.PI.shape[0])])/(pi.KN+1e-6)
+            pi.v += pi.partG(U,self.RHO,self.PI)
 
         for j,rho in enumerate(self.RHO):
             renew = rho.r
