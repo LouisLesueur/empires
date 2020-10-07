@@ -134,8 +134,11 @@ class Pop:
     def alpha(self, u):
         return np.exp(-(self.v-u)**2/4)
 
-    def G(self, a, U, RHO, PI, i):
-        conso = self.c*np.sum([a[i,j]*RHO[j].rho for j in range(RHO.shape[0])], axis=0)
+    def K(self):
+        return self.KN * np.exp(-(self.v)**2/4)
+
+    def G(self, U, RHO, PI, i):
+        conso = self.c*np.sum([RHO[j].prop*RHO[j].rho for j in range(RHO.shape[0])], axis=0)
         death = -self.gamma
         war = -np.sum([self.alpha(U[i])*PI[i].pi for i in range(PI.shape[0])], axis=0)
         return conso+death+war
@@ -150,7 +153,7 @@ class Pop:
         out = self.color*np.ones((self.pi.shape[0], self.pi.shape[1], 3))
         #fact = (1-np.exp(-self.pi/np.max(self.pi)))
         fact = np.zeros_like(self.pi)
-        fact[np.where(self.pi>0.1*np.max(self.pi))]=1
+        fact[np.where(self.pi>0.3*np.max(self.pi))]=1
 
         out[:,:,0] *= fact
         out[:,:,1] *= fact
@@ -161,11 +164,12 @@ class Pop:
 class Res:
     """Resources class"""
 
-    def __init__(self, r0, KR, shape, area):
+    def __init__(self, r0, KR, prop, shape, area):
         """Constructor of the class
 
         r0 -- The renewal rate of resources in best conditions (%/year)
         KR -- The carrying capacity density in best conditions (res/km)
+        prop -- resource proporsion per cell (1/(year * pop))
         shape -- dimensions of the domain (int, int)
         area -- area of the domain (km^2)
         """
@@ -173,6 +177,7 @@ class Res:
         self.rho = (KR/area)*np.ones(shape)
         self.r = r0*np.ones(shape)
         self.KR = KR*np.ones(shape)
+        self.prop = prop
 
     def tot(self, area):
         """returns the total amount of resource"""

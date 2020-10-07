@@ -39,8 +39,6 @@ class Grid:
             for rho in self.RHO:
                 rho.resize(dx, self.dom.dx_start)
 
-        self.a = np.zeros((self.PI.shape[0], self.RHO.shape[0], self.dom.shape[0], self.dom.shape[1]))
-
         self.time = 0
 
     def update(self):
@@ -53,7 +51,7 @@ class Grid:
 
         for i,pi in enumerate(self.PI):
 
-            pi.repro = pi.G(self.a, U,self.RHO,self.PI, i)
+            pi.repro = pi.G(U,self.RHO,self.PI, i)
             migration = pi.DN(pi.repro)*lap(pi.pi, pi.dx)
             shift = pi.drift0*pi.pi*lap(np.sum([rho.rho for rho in self.RHO], axis=0), pi.dx)
 
@@ -65,18 +63,13 @@ class Grid:
         for j,rho in enumerate(self.RHO):
             renew = rho.r
             thresh = -(rho.r*rho.rho)/rho.KR
-            conso = -np.sum([self.a[k,j]*self.PI[k].pi for k in range(self.PI.shape[0])], axis=0)
+            conso = -np.sum([rho.prop*self.PI[k].pi for k in range(self.PI.shape[0])], axis=0)
 
             repro_res = (fluctuations*renew+thresh+conso)
 
             rho.rho += rho.rho*repro_res
             rho.rho *= self.dom.I
 
-        for i in range(self.PI.shape[0]):
-            for j in range(self.RHO.shape[0]):
-                self.a[i,j] += (self.RHO[j].rho)*self.PI[i].mask()
-                self.a[i,j] /= np.max(self.a[i,j])
-                self.a[i,j] *= self.dom.I
 
     def get_img(self):
         """returns the repartition of all pops"""

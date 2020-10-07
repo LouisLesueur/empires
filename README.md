@@ -8,8 +8,9 @@ It is a simple reaction–diffusion system based on darwinian dynamics.
 # To-do
 - [ ] Use cuda and cupy for better perf
 - [ ] Try different solving methods to gain perfs
-- [ ] Tune parameters
-- [ ] Use more coherent game theory models
+- [x] Tune parameters
+- [x] Use more coherent game theory models
+- [ ] Generate resources from maps
 - [ ] Make a clear documentation on the maths behind the model
 
 # Sources

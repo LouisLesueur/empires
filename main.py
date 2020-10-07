@@ -19,9 +19,9 @@ while(count) < N:
 
     if Europe.I[i,j] != 0:
         count +=1
-        PI.append(Pop([i, j], 200, np.random.randint(255, size=3), 0.001, 10, 1000, 0.002, 0.0002, Europe.shape, Europe.area, Europe.dx))
+        PI.append(Pop([i, j], 200, np.random.randint(255, size=3), 0.001, 10, 1000, 0.02, 0.0002, Europe.shape, Europe.area, Europe.dx))
 
-Miam =  Res(0.2, 5000, Europe.shape, Europe.area)
+Miam =  Res(0.2, 5000, 0.01, Europe.shape, Europe.area)
 
 RHO = np.array([Miam])
 sim = Grid(np.array(PI), RHO, Europe, 20)
