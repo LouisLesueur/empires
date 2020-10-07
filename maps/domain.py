@@ -134,13 +134,11 @@ class Pop:
     def alpha(self, u):
         return np.exp(-(self.v-u)**2/4)
 
-    def K(self):
-        return self.KN * np.exp(-(self.v)**2/4)
 
     def G(self, U, RHO, PI, i):
         conso = self.c*np.sum([RHO[j].prop*RHO[j].rho for j in range(RHO.shape[0])], axis=0)
         death = -self.gamma
-        war = -self.gamma*np.sum([self.alpha(U[i])*PI[i].pi for i in range(PI.shape[0])], axis=0)/(self.K()+1e-6)
+        war = -self.gamma*np.sum([self.alpha(U[i])*PI[i].pi for i in range(PI.shape[0])], axis=0)/(self.KN+1e-6)
         return conso+death+war
 
     def DN(self, r):

@@ -57,7 +57,7 @@ class Grid:
 
             pi.pi += pi.pi*pi.repro + migration + shift
 
-            pi.v += np.sum([np.sqrt(2)*((pi.v-U[i])/2)*pi.alpha(U[i]) for i in range(self.PI.shape[0])])
+            pi.v += np.sum([((pi.v-U[i])/2)*pi.alpha(U[i]) for i in range(self.PI.shape[0])])/(pi.KN+1e-6)
 
         for j,rho in enumerate(self.RHO):
             renew = rho.r
