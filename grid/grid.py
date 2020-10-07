@@ -56,7 +56,6 @@ class Grid:
             shift = pi.drift0*pi.pi*lap(np.sum([rho.rho for rho in self.RHO], axis=0), pi.dx)
 
             pi.pi += pi.pi*pi.repro + migration + shift
-            pi.pi *= self.dom.I
 
             pi.v += np.sum([np.sqrt(2)*((pi.v-U[i])/2)*pi.alpha(U[i]) for i in range(self.PI.shape[0])])
 
@@ -68,7 +67,6 @@ class Grid:
             repro_res = (fluctuations*renew+thresh+conso)
 
             rho.rho += rho.rho*repro_res
-            rho.rho *= self.dom.I
 
 
     def get_img(self):
