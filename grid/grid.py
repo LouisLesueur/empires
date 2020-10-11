@@ -56,17 +56,18 @@ class Grid:
             shift = pi.drift0*pi.pi*lap(np.sum([rho.rho for rho in self.RHO], axis=0), pi.dx)
 
             pi.pi += pi.pi*pi.repro + migration + shift
-
+            pi.pi[np.where(pi.pi<0)] = 0
             pi.v += pi.partG(U,self.RHO,self.PI)
 
         for j,rho in enumerate(self.RHO):
-            renew = rho.r
-            thresh = -(rho.r*rho.rho)/rho.KR
-            conso = -np.sum([rho.prop*self.PI[k].pi for k in range(self.PI.shape[0])], axis=0)
+            renew = 1
+            thresh = -rho.rho/rho.KR
+            conso = -np.sum([ pi.conso(rho)*pi.pi for pi in self.PI], axis=0)
 
-            repro_res = (fluctuations*renew+thresh+conso)
+            repro_res = renew*fluctuations+thresh
 
-            rho.rho += rho.rho*repro_res
+            rho.rho += rho.r*rho.rho*repro_res+conso
+            rho.rho[np.where(rho.rho<0)] = 0
 
 
     def get_img(self):

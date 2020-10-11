@@ -70,7 +70,7 @@ class Domain:
 class Pop:
     """Population class"""
 
-    def __init__(self, start_loc, start_number, color, gamma, D0, KN, c, drift0, shape, area, dx):
+    def __init__(self, start_loc, start_number, color, gamma, D0, KN, c, trans, drift0, shape, area, dx):
         """Population constructor
 
         start_loc -- array with starting location coordonates
@@ -79,7 +79,8 @@ class Pop:
         gamma -- death rate density (%/years)
         D0 -- diffusion coefficient in the best conditions (km^2/years)
         KN -- carrying capacity in the best conditions (pop/km)
-        c -- resource transformation capacity ( pop / res)
+        c -- consumption (res / pop.year)
+        trans -- resource transformation capacity ( pop / res)
         drift0 -- base resource attraction (km^2 / res*year)
         shape -- dimensions of the domain (int, int)
         area -- area of the domain (km^2)
@@ -98,8 +99,9 @@ class Pop:
         self.repro = np.zeros(shape)
         self.color = color
         self.dx = dx
-        self.v = 0.002
+        self.v = 0
         self.c = c
+        self.trans = trans
         self.drift0 = drift0
 
     def mask(self):
@@ -134,15 +136,20 @@ class Pop:
     def alpha(self, u):
         return np.exp(-(self.v-u)**2/4)
 
+    def conso(self, rho):
+        return ((self.c*(rho.rho**2))/((0.75*rho.KR)**2 + rho.rho**2))
+
 
     def G(self, U, RHO, PI):
-        conso = self.c*np.sum([RHO[j].prop*RHO[j].rho for j in range(RHO.shape[0])], axis=0)
+
+        conso = np.sum([self.trans*self.conso(rho)/self.c for rho in RHO], axis=0)
         death = -self.gamma
-        war = -self.gamma*np.sum([self.alpha(U[i])*PI[i].pi for i in range(PI.shape[0])], axis=0)/(self.KN+1e-6)
+        #rr = self.gamma*(1-np.sum([rho.rho for rho in RHO], axis=0)/(self.trans*self.pi+1e-6))
+        war = -np.sum([self.alpha(U[i])*PI[i].pi for i in range(PI.shape[0])], axis=0)/(self.KN+1e-6)
         return conso+death+war
 
     def partG(self, U, RHO, PI):
-        return self.gamma*np.sum([((self.v-U[i])/2)*self.alpha(U[i])*PI[i].pi for i in range(PI.shape[0])])/(self.KN+1e-6)
+        return np.sum([((self.v-U[i])/2)*self.alpha(U[i])*PI[i].pi for i in range(PI.shape[0])])/(self.KN+1e-6)
 
     def DN(self, r):
         """Diffusion coefficient (see Gorban and all)"""
@@ -154,7 +161,7 @@ class Pop:
         out = self.color*np.ones((self.pi.shape[0], self.pi.shape[1], 3))
         #fact = (1-np.exp(-self.pi/np.max(self.pi)))
         fact = np.zeros_like(self.pi)
-        fact[np.where(self.pi>0.2*np.max(self.pi))]=1
+        fact[np.where(self.pi>0.05*np.max(self.KN))]=1
 
         out[:,:,0] *= fact
         out[:,:,1] *= fact
@@ -165,12 +172,11 @@ class Pop:
 class Res:
     """Resources class"""
 
-    def __init__(self, r0, KR, prop, shape, area):
+    def __init__(self, r0, KR, shape, area):
         """Constructor of the class
 
         r0 -- The renewal rate of resources in best conditions (%/year)
         KR -- The carrying capacity density in best conditions (res/km)
-        prop -- resource proporsion per cell (1/(year * pop))
         shape -- dimensions of the domain (int, int)
         area -- area of the domain (km^2)
         """
@@ -178,7 +184,6 @@ class Res:
         self.rho = (KR/area)*np.ones(shape)
         self.r = r0*np.ones(shape)
         self.KR = KR*np.ones(shape)
-        self.prop = prop
 
     def tot(self, area):
         """returns the total amount of resource"""
