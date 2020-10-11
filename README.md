@@ -22,7 +22,7 @@ The first equation of the system represents the evolution of each population:
 ### The G-function
 The G-function has the form <a href="https://www.codecogs.com/eqnedit.php?latex=G_i(N,&space;\rho,&space;v,&space;u)&space;=&space;G^1_i(\rho)&space;&plus;&space;G^2_i(N,v,u)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?G_i(N,&space;\rho,&space;v,&space;u)&space;=&space;G^1_i(\rho)&space;&plus;&space;G^2_i(N,v,u)" title="G_i(N, \rho, v, u) = G^1_i(\rho) + G^2_i(N,v,u)" /></a>, with the first term modelling reproduction without any external perturbations, the second the influence of other populations.
 
-For the first term, two many forms are used in population dynamics:
+For the first term, two main forms are used in population dynamics:
 + Laissez-faire: <a href="https://www.codecogs.com/eqnedit.php?latex=G^1_i(\rho)&space;=&space;\frac{b}{c}&space;\sum_j&space;{\Phi_i(\rho_j)}&space;-&space;\gamma" target="_blank"><img src="https://latex.codecogs.com/gif.latex?G^1_i(\rho)&space;=&space;\frac{b}{c}&space;\sum_j&space;{\Phi_i(\rho_j)}&space;-&space;\gamma" title="G^1_i(\rho) = \frac{b}{c} \sum_j {\Phi_i(\rho_j)} - \gamma" /></a>
 
 + Leslie: <a href="https://www.codecogs.com/eqnedit.php?latex=G^1_i(\rho)&space;=&space;s(1-\frac{N_i}{h&space;\sum_j{\rho_j}})" target="_blank"><img src="https://latex.codecogs.com/gif.latex?G^1_i(\rho)&space;=&space;s(1-\frac{N_i}{h&space;\sum_j{\rho_j}})" title="G^1_i(\rho) = s(1-\frac{N_i}{h \sum_j{\rho_j}})" /></a>
