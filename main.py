@@ -33,7 +33,7 @@ while(count) < N:
                   Europe.dx))
 
 Miam =  Res(0.3,
-            2000,
+            600,
             Europe.shape,
             Europe.area)
 
