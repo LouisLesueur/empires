@@ -51,11 +51,11 @@ class Grid:
 
         for i,pi in enumerate(self.PI):
 
-            pi.repro = pi.G(U,self.RHO,self.PI)
-            migration = pi.DN(pi.repro)*lap(pi.pi, pi.dx)
+            repro = pi.G(U,self.RHO,self.PI)
+            migration = pi.DN(repro)*lap(pi.pi, pi.dx)
             shift = pi.drift0*pi.pi*lap(np.sum([rho.rho for rho in self.RHO], axis=0), pi.dx)
 
-            pi.pi += pi.pi*pi.repro + migration + shift
+            pi.pi += pi.pi*repro + migration + shift
             pi.pi[np.where(pi.pi<0)] = 0
             pi.v += pi.partG(U,self.RHO,self.PI)
 

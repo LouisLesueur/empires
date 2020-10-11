@@ -96,7 +96,6 @@ class Pop:
         self.gamma = gamma*np.ones(shape)
         self.D = D0*np.ones(shape)
         self.KN = KN*np.ones(shape) / area
-        self.repro = np.zeros(shape)
         self.color = color
         self.dx = dx
         self.v = 0
@@ -128,7 +127,6 @@ class Pop:
             self.gamma = restrict(self.gamma, self.dx, new_dx)
             self.D = restrict(self.D, self.dx, new_dx)
             self.KN = restrict(self.KN, self.dx, new_dx)
-            self.repro = restrict(self.repro, self.dx, new_dx)
             self.dx = new_dx
         else:
             print("only coarser grid are authorized !")
@@ -139,12 +137,9 @@ class Pop:
     def conso(self, rho):
         return ((self.c*(rho.rho**2))/((0.75*rho.KR)**2 + rho.rho**2))
 
-
     def G(self, U, RHO, PI):
-
         conso = np.sum([self.trans*self.conso(rho)/self.c for rho in RHO], axis=0)
         death = -self.gamma
-        #rr = self.gamma*(1-np.sum([rho.rho for rho in RHO], axis=0)/(self.trans*self.pi+1e-6))
         war = -np.sum([self.alpha(U[i])*PI[i].pi for i in range(PI.shape[0])], axis=0)/(self.KN+1e-6)
         return conso+death+war
 

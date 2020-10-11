@@ -9,7 +9,7 @@ from PIL import Image
 
 Europe = Domain('maps/europe')
 
-N = 10
+N = 5
 PI = []
 
 count = 0
@@ -23,11 +23,11 @@ while(count) < N:
                   500, #init value
                   np.random.randint(255, size=3), #color
                   0.2, #death rate
-                  2, #diffusion coeff
+                  1.5, #diffusion coeff
                   1000, #carrying capacity
                   2, #consumption
                   1, #transformation
-                  0.05, #drift
+                  0.1, #drift
                   Europe.shape,
                   Europe.area,
                   Europe.dx))
@@ -38,9 +38,9 @@ Miam =  Res(0.3,
             Europe.area)
 
 RHO = np.array([Miam])
-sim = Grid(np.array(PI), RHO, Europe, 20)
+sim = Grid(np.array(PI), RHO, Europe, 15)
 
-fig = plt.figure(figsize=(10,5))
+fig = plt.figure()
 
 im=plt.imshow(sim.get_img())
 
@@ -54,5 +54,5 @@ def animate(i):
 
 writer = PillowWriter(fps=15)
 anim = FuncAnimation(fig, animate, frames = 500, interval = 50)
-#anim.save('out.gif', writer=writer)
-plt.show()
+anim.save('out.gif', writer=writer)
+#plt.show()
