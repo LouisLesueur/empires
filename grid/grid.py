@@ -108,7 +108,7 @@ class Grid:
         #Demography
         k = (1 + self.Zpriv/(self.Zdem + self.Zpriv))*self.Nbar*I_filter*self.dom.I_r
         self.G = self.n0*(1-(self.N/(k+1e-6)))
-        self.N += self.G*self.N*self.dt*I_filter
+
 
         #Asabiya
         self.S += self.s0*self.S*(1-self.S)*self.dt*I_filter
@@ -126,13 +126,13 @@ class Grid:
         #Migration
         D = self.D*np.exp(-(self.G/np.linalg.norm(self.G)))
 
-        self.N += D*lap(self.N, self.dx)*self.dt + self.drift*self.N*lap(self.R, self.dx)
+        self.N += self.G*self.N*self.dt*I_filter + D*lap(self.N, self.dx)*self.dt + self.drift*self.N*lap(self.R, self.dx)
         for s in self.states.values():
             z = np.zeros_like(self.Idx, dtype=np.bool)
             z[np.where(self.Idx == s.idx)] = True
             z = (D*lap(z, self.dx) + self.drift*z*lap(self.R, self.dx)).astype(np.bool)
             self.Idx[np.where(z==True)] = s.idx
-            self.Idx[np.where(self.N<=self.Nbar)] = -1
+            self.Idx[np.where(self.N<=0.001)] = -1
 
 
         #Geographical update

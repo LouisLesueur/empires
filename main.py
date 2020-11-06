@@ -8,11 +8,12 @@ from PIL import Image
 
 
 Europe = Domain('maps/europe')
-Europe.resize(25)
+Europe.resize(40)
 
 niter = 500
+scale = 50
 lenN = 50
-R =  Res(5,1000)
+R =  Res(10,1000)
 
 count = 0
 start = []
@@ -43,7 +44,7 @@ fig = plt.figure()
 im=plt.imshow(sim.get_img())
 
 def animate(i):
-    for _ in range(10):
+    for _ in range(scale):
         sim.update()
     im.set_array(sim.get_img())
 
