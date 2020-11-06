@@ -11,7 +11,7 @@ Europe = Domain('maps/europe')
 Europe.resize(50)
 
 lenN = 5
-R =  Res(0.2,50)
+R =  Res(0.05,100)
 
 count = 0
 start = []
@@ -28,15 +28,15 @@ while(count) < lenN:
 
 N = Pop(start, #array with starting location coordonates
         Nstart, #start populations (pop)
-        10, #maximum consumption rate per person (res^-1.pop^-1.year^-1)
+        0.7, #maximum consumption rate per person (res^-1.pop^-1.year^-1)
         2, #R needed to reach half of maximum consumption rate (res)
-        0.2, #pop natural growth rate (year^-1)
+        0.002, #pop natural growth rate (year^-1)
         2, #inflexion of KN
-        10, #barbarian population level (pop)
-        10) #migration inflexion factor (pop^-1)
+        5, #barbarian population level (pop)
+        40) #Diffusion coefficien)
 
 
-sim = Grid(N, R, Europe, 0.01)
+sim = Grid(N, R, Europe, 0.1)
 fig = plt.figure()
 im=plt.imshow(sim.get_img())
 

@@ -81,7 +81,7 @@ class Res:
 class Pop:
     """Population class"""
 
-    def __init__(self, start_loc,N_start,c0,Rdem,n0,k0,Nbar,gamma):
+    def __init__(self, start_loc,N_start,c0,Rdem,n0,k0,Nbar,D):
         """Population constructor
 
         Starting:
@@ -95,7 +95,7 @@ class Pop:
             k0 -- inflexion of KN
             Nbar -- barbarian population level (pop)
         Migration:
-            gamma -- migration inflexion factor (pop^-1)
+            D -- Diffusion coefficient
         """
 
         self.start_loc = start_loc
@@ -105,7 +105,7 @@ class Pop:
         self.n0 = n0
         self.k0 = k0
         self.Nbar = Nbar
-        self.gamma = gamma
+        self.D = D
 
 
 class State:
@@ -124,7 +124,7 @@ class State:
         Taxes parameters:
             alpha -- production taxation (%.year^-1)
         Asabiya:
-            sig -- cohesion ray (km)
+            s0 -- Asabiya growth rate
         Power:
             h -- power decline speed with distance (km)
             z -- power decline speed with money (money)
@@ -139,3 +139,9 @@ class State:
         self.sig = sig
         self.h = h
         self.z = z
+
+    def area(self,Idx,dx):
+        return np.sum((Idx == self.idx).astype(np.int32))*dx**2
+
+    def barycenter(self,x,Idx):
+        return np.sum(x[np.where(Idx==self.idx)], axis=0)/(len(x[np.where(Idx==self.idx)])+1e-6)
