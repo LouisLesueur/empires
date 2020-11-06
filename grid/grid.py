@@ -43,8 +43,8 @@ class Grid:
         self.time = 0
         self.dt = dt
 
-        self.r0 = 100*Rs.r0*self.dom.I_r
-        self.Rmax = 2*Rs.Rmax*self.dom.I_topo
+        self.r0 = Rs.r0*self.dom.I_r
+        self.Rmax = Rs.Rmax*self.dom.I_topo
 
         self.c = 1
         self.eps = 1
@@ -77,7 +77,8 @@ class Grid:
         self.Zdem = self.c*Ns.Rdem
         self.n0 = Ns.n0
         self.k0 = Ns.k0
-        self.D = Ns.D
+        self.D = Ns.D*self.dom.I_topo
+        self.drift = Ns.drift
         self.Nbar = Ns.Nbar
         self.bary_map = np.zeros((*self.dom.I.shape,2))
         for s in self.states.values():
@@ -105,7 +106,7 @@ class Grid:
         satisfaction = (self.Zpub - self.Zdem)*I_filter
 
         #Demography
-        k = (1 + self.Zpub/(self.Zdem + self.Zpub))*self.Nbar*I_filter
+        k = (1 + self.Zpub/(self.Zdem + self.Zpub))*self.Nbar*I_filter*self.dom.I_r
         self.G = self.n0*(1-(self.N/(k+1e-6)))
         self.N += self.G*self.N*self.dt*I_filter
 
@@ -125,11 +126,11 @@ class Grid:
         #Migration
         D = self.D*np.exp(-(self.G/np.linalg.norm(self.G)))
 
-        self.N += D*lap(self.N, self.dx)*self.dt
+        self.N += D*lap(self.N, self.dx)*self.dt + self.drift*self.N*lap(self.R, self.dx)
         for s in self.states.values():
             z = np.zeros_like(self.Idx, dtype=np.bool)
             z[np.where(self.Idx == s.idx)] = True
-            z = (D*lap(z, self.dx)).astype(np.bool)
+            z = (D*lap(z, self.dx) + self.drift*z*lap(self.R, self.dx)).astype(np.bool)
             self.Idx[np.where(z==True)] = s.idx
             self.Idx[np.where(self.N<=self.Nbar)] = -1
 
