@@ -10,7 +10,8 @@ from PIL import Image
 Europe = Domain('maps/europe')
 Europe.resize(25)
 
-lenN = 15
+niter = 500
+lenN = 50
 R =  Res(5,1000)
 
 count = 0
@@ -28,9 +29,9 @@ while(count) < lenN:
 
 N = Pop(start, #array with starting location coordonates
         Nstart, #start populations (pop)
-        0.7, #maximum consumption rate per person (res^-1.pop^-1.year^-1)
+        0.1, #maximum consumption rate per person (res^-1.pop^-1.year^-1)
         10, #R needed to reach half of maximum consumption rate (res)
-        0.002, #pop natural growth rate (year^-1)
+        0.02, #pop natural growth rate (year^-1)
         2, #inflexion of KN
         1, #barbarian population level (pop)
         40, #Diffusion coefficient
@@ -50,6 +51,6 @@ def animate(i):
     return [im]
 
 writer = PillowWriter(fps=15)
-anim = FuncAnimation(fig, animate, frames = 500, interval = 50)
+anim = FuncAnimation(fig, animate, frames = niter, interval = 50)
 #anim.save('out.gif', writer=writer)
 plt.show()

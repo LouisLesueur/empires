@@ -47,7 +47,7 @@ class Grid:
         self.Rmax = Rs.Rmax*self.dom.I_topo
 
         self.c = 1
-        self.eps = 1
+        self.eps = 0.7
         self.c1 = 3
         self.alpha = 0.2
         self.s0 = 0.1
@@ -102,11 +102,11 @@ class Grid:
         self.Zpriv = (1-self.alpha)*self.Z*self.dt*I_filter
 
         #Consumption
-        self.Zpub -= ((self.c0*self.R)/(self.Rdem + self.R))*self.dt*I_filter
-        satisfaction = (self.Zpub - self.Zdem)*I_filter
+        self.Zpriv -= ((self.c0*self.R)/(self.Rdem + self.R))*self.dt*I_filter
+        satisfaction = (self.Zpriv - self.Zdem)*I_filter
 
         #Demography
-        k = (1 + self.Zpub/(self.Zdem + self.Zpub))*self.Nbar*I_filter*self.dom.I_r
+        k = (1 + self.Zpriv/(self.Zdem + self.Zpriv))*self.Nbar*I_filter*self.dom.I_r
         self.G = self.n0*(1-(self.N/(k+1e-6)))
         self.N += self.G*self.N*self.dt*I_filter
 
