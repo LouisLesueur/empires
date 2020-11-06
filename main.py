@@ -1,44 +1,34 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from grid.grid import Grid
-from maps.domain import Domain, Pop, Res
+from maps.domain import Domain, Pop, Res, State
 
 from matplotlib.animation import FuncAnimation, PillowWriter
 from PIL import Image
 
 
 Europe = Domain('maps/europe')
+Europe.resize(15)
 
-N = 5
-PI = []
+lenN = 5
+R =  Res(0.3,600)
 
 count = 0
-while(count) < N:
+start = []
+Nstart = []
+
+while(count) < lenN:
     i = np.random.randint(10, Europe.shape[0]//2-10)
     j = np.random.randint(10, Europe.shape[1]//2-10)
 
     if Europe.I[i,j] != 0:
         count +=1
-        PI.append(Pop([i, j],
-                  500, #init value
-                  np.random.randint(255, size=3), #color
-                  0.2, #death rate
-                  1.5, #diffusion coeff
-                  1000, #carrying capacity
-                  2, #consumption
-                  1, #transformation
-                  0.1, #drift
-                  Europe.shape,
-                  Europe.area,
-                  Europe.dx))
+        start.append([i,j])
+        Nstart.append(500)
 
-Miam =  Res(0.3,
-            600,
-            Europe.shape,
-            Europe.area)
+N = Pop(start, Nstart, 10, 4, 0.5, 1, 10, 10)
 
-RHO = np.array([Miam])
-sim = Grid(np.array(PI), RHO, Europe, 15)
+sim = Grid(N, R, Europe, 1)
 
 fig = plt.figure()
 
@@ -54,5 +44,5 @@ def animate(i):
 
 writer = PillowWriter(fps=15)
 anim = FuncAnimation(fig, animate, frames = 500, interval = 50)
-anim.save('out.gif', writer=writer)
-#plt.show()
+#anim.save('out.gif', writer=writer)
+plt.show()

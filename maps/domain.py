@@ -67,130 +67,75 @@ class Domain:
             print("only coarser grid are authorized !")
 
 
-class Pop:
-    """Population class"""
-
-    def __init__(self, start_loc, start_number, color, gamma, D0, KN, c, trans, drift0, shape, area, dx):
-        """Population constructor
-
-        start_loc -- array with starting location coordonates
-        start_number -- initial population density (pop/km^2)
-        color -- array with the color of the pop on the map (RGB)
-        gamma -- death rate density (%/years)
-        D0 -- diffusion coefficient in the best conditions (km^2/years)
-        KN -- carrying capacity in the best conditions (pop/km)
-        c -- consumption (res / pop.year)
-        trans -- resource transformation capacity ( pop / res)
-        drift0 -- base resource attraction (km^2 / res*year)
-        shape -- dimensions of the domain (int, int)
-        area -- area of the domain (km^2)
-        dx -- space step of the domain (km)
-        """
-
-        self.pi = np.zeros(shape)
-
-        for i in np.arange(-10,10):
-            for j in np.arange(-10,10):
-                self.pi[start_loc[0]+i, start_loc[1]+j] = start_number / area
-
-        self.gamma = gamma*np.ones(shape)
-        self.D = D0*np.ones(shape)
-        self.KN = KN*np.ones(shape) / area
-        self.color = color
-        self.dx = dx
-        self.v = 0
-        self.c = c
-        self.trans = trans
-        self.drift0 = drift0
-
-    def mask(self):
-        """returns a boolean mask of the occupation zone"""
-
-        out = np.zeros_like(self.pi)
-        out[np.where(self.pi == 0)] = 1
-        return True*out
-
-    def area(self):
-        """returns the area occupied in km^2"""
-
-        return np.sum(self.mask())*(self.dx**2)
-
-    def tot(self):
-        """returns the total population in pop"""
-        return np.sum(self.pi)*self.area()
-
-    def resize(self, new_dx):
-        """projection on a coarser grid"""
-
-        if new_dx > self.dx:
-            self.pi = restrict(self.pi, self.dx, new_dx)
-            self.gamma = restrict(self.gamma, self.dx, new_dx)
-            self.D = restrict(self.D, self.dx, new_dx)
-            self.KN = restrict(self.KN, self.dx, new_dx)
-            self.dx = new_dx
-        else:
-            print("only coarser grid are authorized !")
-
-    def alpha(self, u):
-        return np.exp(-(self.v-u)**2/4)
-
-    def conso(self, rho):
-        return ((self.c*(rho.rho**2))/((0.75*rho.KR)**2 + rho.rho**2))
-
-    def G(self, U, RHO, PI):
-        conso = np.sum([self.trans*self.conso(rho)/self.c for rho in RHO], axis=0)
-        death = -self.gamma
-        war = -np.sum([self.alpha(U[i])*PI[i].pi for i in range(PI.shape[0])], axis=0)/(self.KN+1e-6)
-        return conso+death+war
-
-    def partG(self, U, RHO, PI):
-        return np.sum([((self.v-U[i])/2)*self.alpha(U[i])*PI[i].pi for i in range(PI.shape[0])])/(self.KN+1e-6)
-
-    def DN(self, r):
-        """Diffusion coefficient (see Gorban and all)"""
-        return self.D*np.exp(-(r/np.linalg.norm(r)))
-
-    def colorize(self):
-        """Returns the colormap of occupied zones"""
-
-        out = self.color*np.ones((self.pi.shape[0], self.pi.shape[1], 3))
-        #fact = (1-np.exp(-self.pi/np.max(self.pi)))
-        fact = np.zeros_like(self.pi)
-        fact[np.where(self.pi>0.05*np.max(self.KN))]=1
-
-        out[:,:,0] *= fact
-        out[:,:,1] *= fact
-        out[:,:,2] *= fact
-        return out
-
-
 class Res:
     """Resources class"""
-
-    def __init__(self, r0, KR, shape, area):
+    def __init__(self, r0, Rmax):
         """Constructor of the class
 
         r0 -- The renewal rate of resources in best conditions (%/year)
-        KR -- The carrying capacity density in best conditions (res/km)
-        shape -- dimensions of the domain (int, int)
-        area -- area of the domain (km^2)
+        Rmax -- Maximum ressources in the best conditions (res)
+        """
+        self.r0 = r0
+        self.Rmax = Rmax
+
+class Pop:
+    """Population class"""
+
+    def __init__(self, start_loc,N_start,c0,Rdem,n0,k0,Nbar,gamma):
+        """Population constructor
+
+        Starting:
+            start_loc -- array with starting location coordonates
+            N_start -- start populations (pop)
+        Consumption parameters:
+            c0 -- maximum consumption rate per person (res^-1.pop^-1.year^-1)
+            Rdem -- R needed to reach half of maximum consumption rate (res)
+        Demography:
+            n0 -- pop natural growth rate (year^-1)
+            k0 -- inflexion of KN
+            Nbar -- barbarian population level (pop)
+        Migration:
+            gamma -- migration inflexion factor (pop^-1)
         """
 
-        self.rho = (KR/area)*np.ones(shape)
-        self.r = r0*np.ones(shape)
-        self.KR = KR*np.ones(shape)
+        self.start_loc = start_loc
+        self.N_start = N_start
+        self.c0 = c0
+        self.Rdem = Rdem
+        self.n0 = n0
+        self.k0 = k0
+        self.Nbar = Nbar
+        self.gamma = gamma
 
-    def tot(self, area):
-        """returns the total amount of resource"""
 
-        return np.sum(self.rho)*area
+class State:
+    """State class"""
 
-    def resize(self, new_dx, old_dx):
-        """projection on a coarser grid"""
+    def __init__(self, color, idx,c,eps,c1,alpha,sig,h,z):
+        """State constructor
+        Code caracteristics:
+            color -- color (array)
+            idx -- state index
+        Production parameters:
+            c -- production rate (money.resource^-1.year^-1)
+            eps -- ressource extraction capacity (%)
+        Cultural assimilation:
+            c1 -- C growth rate (year^-1)
+        Taxes parameters:
+            alpha -- production taxation (%.year^-1)
+        Asabiya:
+            sig -- cohesion ray (km)
+        Power:
+            h -- power decline speed with distance (km)
+            z -- power decline speed with money (money)
+        """
 
-        if new_dx > old_dx:
-            self.rho = restrict(self.rho, old_dx, new_dx)
-            self.r = restrict(self.r, old_dx, new_dx)
-            self.KR = restrict(self.KR, old_dx, new_dx)
-        else:
-            print("only coarser grid are authorized !")
+        self.color = color
+        self.idx = idx
+        self.c =c
+        self.eps = eps
+        self.c1 = c1
+        self.alpha = alpha
+        self.sig = sig
+        self.h = h
+        self.z = z

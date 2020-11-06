@@ -6,80 +6,130 @@ This module combines domain, pops and resources to make the simulation
 
 import numpy as np
 from grid.mathutils import grad_grad, lap
-
+from maps.domain import State
 
 class Grid:
     """The grid class"""
 
-    def __init__(self,  PI, RHO, Domain, dx=None):
+    def __init__(self,  Ns, Rs, Domain, dt):
         """Constructor of the grid
 
-        PI -- an array of pops
-        RHO -- an array of resources
+        N -- pops
+        Rs -- resources
         Domain -- The domain on which the simulation will be made
-        dx -- The sharpness of the discretization
+        dt -- Time step (year)
         """
 
-        self.RHO = RHO
-        self.PI = PI
         self.dom = Domain
+        self.dx = Domain.dx
 
-        for pi in self.PI:
-            pi.D *= self.dom.I_topo
-            pi.KN *= self.dom.I_r
+        self.N = np.zeros_like(self.dom.I)
+        self.P = np.zeros_like(self.dom.I)
+        self.Z = np.zeros_like(self.dom.I)
+        self.C = np.zeros((len(Ns.start_loc),*self.dom.I.shape))
+        self.R = 0.75*Rs.Rmax*np.zeros_like(self.dom.I)
+        self.Idx = np.zeros_like(self.dom.I)-1
 
-        for rho in self.RHO:
-            rho.KR *= self.dom.I_topo
-            rho.r *= self.dom.I_r
+        self.x = np.array([[[i,j] for i in range(self.dom.I.shape[0])] for j in range(self.dom.I.shape[1])])*self.dx
 
-        if dx != None:
-            self.dom.resize(dx)
-            for pi in self.PI:
-                pi.resize(dx)
-            for rho in self.RHO:
-                rho.resize(dx, self.dom.dx_start)
-
+        self.states = []
         self.time = 0
+        self.dt = dt
+
+        self.r0 = Rs.r0*self.dom.I_topo
+        self.Rmax = Rs.Rmax*self.dom.I_r
+
+        self.c = 1
+        self.eps = 0.7
+        self.c1 = 3
+        self.alpha = 0.2
+        self.sig = 100
+        self.h = 100
+        self.z = 100
+
+        for i,idx in enumerate(Ns.start_loc):
+            self.C[i,idx] = 1
+            self.N[idx] = Ns.N_start[i]
+            self.Idx[idx] = i
+            self.states.append(State(np.random.rand(3),i,self.c,
+                                     self.eps, self.c1,self.alpha,
+                                     self.sig, self.h,self.z))
+
+        self.c0 = Ns.c0
+        self.Zdem = self.c*Ns.Rdem
+        self.n0 = Ns.n0
+        self.k0 = Ns.k0
+        self.Nbar = Ns.Nbar
+        self.gamma = Ns.gamma
+        self.barycenters = np.zeros((*self.dom.I.shape,2))
+        self.areas = np.zeros(len(self.states))
+
 
     def update(self):
         """Update the grid by one time step"""
+        self.time += self.dt
 
-        self.time += 1
-        fluctuations = 2*(1-np.sin(100*self.time))
+        # Renewal
+        self.R += self.r0*self.R*(1-(self.R/self.Rmax))*self.dt
 
-        U = [pi.v for pi in self.PI]
+        # Production
+        self.Z += self.c*self.eps*self.R*self.dt
+        self.R -= self.eps*self.R*self.dt
 
-        for i,pi in enumerate(self.PI):
+        #Taxes
+        self.Zpub = self.alpha*self.Z*self.dt
+        self.Zpriv = (1-self.alpha)*self.Z*self.dt
 
-            repro = pi.G(U,self.RHO,self.PI)
-            migration = pi.DN(repro)*lap(pi.pi, pi.dx)
-            shift = pi.drift0*pi.pi*lap(np.sum([rho.rho for rho in self.RHO], axis=0), pi.dx)
+        #Consumption
+        self.Zpub -= ((self.c0*self.R)/(self.Rdem + self.R))*self.dt
+        satisfaction = self.Zpub - self.Zdem
 
-            pi.pi += pi.pi*repro + migration + shift
-            pi.pi[np.where(pi.pi<0)] = 0
-            pi.v += pi.partG(U,self.RHO,self.PI)
+        #Cultural assimilation
+        self.C += self.c1* np.einsum('ijk,ijk->ijk',self.C,(1-self.C))
 
-        for j,rho in enumerate(self.RHO):
-            renew = 1
-            thresh = -rho.rho/rho.KR
-            conso = -np.sum([ pi.conso(rho)*pi.pi for pi in self.PI], axis=0)
+        #Demography
+        k = self.k0*(1 + self.Zpub/(self.Zdem + self.Zpub))*self.Nbar
+        G = self.n0*(1-(self.N/k))
+        self.N += G*self.N*self.dt
 
-            repro_res = renew*fluctuations+thresh
+        #Migration
+        D = 0.5*np.tanh(self.gamma*self.N)
+        self.N += D*lap(self.N)*(self.Idx == -1)
 
-            rho.rho += rho.r*rho.rho*repro_res+conso
-            rho.rho[np.where(rho.rho<0)] = 0
+        #Asalyia
+        bary = np.array([np.sum(np.where(A==s.idx)*self.dx,axis=0)/len(np.where(A==s.idx))
+                                     for s in self.states])
+        for s in self.states:
+            self.barycenters[np.where(self.Idx == s.idx),:] = bary[s.idx]
+
+
+        self.S += self.S*(1-self.S)*np.exp((self.x-self.barycenters)**2 / self.sig**2)*np.exp((satisfaction)**2 / (1.5*self.Zdem)**2)
+        for id in np.where(self.S < 0.2):
+            self.Idx[id] = len(self.states)
+            self.states.append(State(np.random.rand(3),len(self.states),self.c,
+                                     self.eps, self.c1,self.alpha,
+                                     self.sig, self.h,self.z))
+
+        #Power
+        self.areas = np.array([np.sum(np.where(A==s.idx)*self.dx**2)
+                                     for s in self.states])
+        self.P = np.einsum('i,ijk -> ijk',self.areas,self.S)*np.exp(-np.linalg.norm(self.x-self.barycenters)/self.h)*(self.Zpub / self.Zdem)
+
+
 
 
     def get_img(self):
         """returns the repartition of all pops"""
 
-        out = np.ones((self.dom.shape[0], self.dom.shape[1],3))
+        out = np.ones((*self.dom.I.shape,3))
 
         out[:,:,0] = self.dom.I
         out[:,:,1] = self.dom.I
         out[:,:,2] = self.dom.I
 
-        for pi in self.PI:
-            out += pi.colorize()
+        for s in self.states:
+            out[np.where(self.Idx==s.idx),0] = s.color[0]
+            out[np.where(self.Idx==s.idx),1] = s.color[1]
+            out[np.where(self.Idx==s.idx),2] = s.color[2]
 
         return (out*255).astype(np.uint8)
