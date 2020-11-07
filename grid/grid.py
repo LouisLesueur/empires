@@ -28,7 +28,7 @@ class Grid:
         self.P = np.zeros_like(self.dom.I)
         self.Z = np.zeros_like(self.dom.I)
         self.G = np.zeros_like(self.dom.I)
-        self.S = 0.5*np.ones_like(self.dom.I)
+        self.S = np.zeros_like(self.dom.I)+0.5
         self.R = 0.75*Rs.Rmax*np.ones_like(self.dom.I)*self.dom.I
         self.Idx = np.zeros_like(self.dom.I)-1
 
@@ -50,8 +50,8 @@ class Grid:
         self.eps = 0.7
         self.c1 = 3
         self.alpha = 0.2
-        self.s0 = 0.1
-        self.h = 100
+        self.s0 = 0.4
+        self.h = 10
         self.z = 100
 
         for i,idx in enumerate(Ns.start_loc):
@@ -76,7 +76,7 @@ class Grid:
         self.Rdem = Ns.Rdem
         self.Zdem = self.c*Ns.Rdem
         self.n0 = Ns.n0
-        self.k0 = Ns.k0
+        self.chi = Ns.chi
         self.D = Ns.D*self.dom.I_topo
         self.drift = Ns.drift
         self.Nbar = Ns.Nbar
@@ -90,52 +90,8 @@ class Grid:
         self.time += self.dt
         I_filter = self.Idx>-1
 
-        # Renewal
-        self.R += self.r0*self.R*(1-(self.R/(self.Rmax+1e-6)))*self.dt
-
-        # Production
-        self.Z += self.c*self.eps*self.R*self.dt*I_filter
-        self.R -= self.eps*self.R*self.dt*I_filter
-
-        #Taxes
-        self.Zpub = self.alpha*self.Z*self.dt*I_filter
-        self.Zpriv = (1-self.alpha)*self.Z*self.dt*I_filter
-
-        #Consumption
-        self.Zpriv -= ((self.c0*self.R)/(self.Rdem + self.R))*self.dt*I_filter
-        satisfaction = (self.Zpriv - self.Zdem)*I_filter
-
-        #Demography
-        k = (1 + self.Zpriv/(self.Zdem + self.Zpriv))*self.Nbar*I_filter*self.dom.I_r
-        self.G = self.n0*(1-(self.N/(k+1e-6)))
-
-
-        #Asabiya
-        self.S += self.s0*self.S*(1-self.S)*self.dt*I_filter
-
-        # for id in np.where(self.S < 0.02):
-        #     self.Idx[id] = self.state_idmax
-        #     self.states[self.state_idmax]=State(np.random.rand(3),self.state_idmax,self.c,
-        #                                         self.eps, self.c1,self.alpha,
-        #                                         self.s0, self.h,self.z)
-        #     self.state_idmax += 1
-
-        # mS = np.zeros_like(self.S)
-        # mS[np.where(self.Idx == s.idx)] = (1/s.area(self.Idx, self.dx)) * np.sum(self.S[np.where(self.Idx == s.idx)])
-
-        #Migration
-        D = self.D*np.exp(-(self.G/np.linalg.norm(self.G)))
-
-        self.N += self.G*self.N*self.dt*I_filter + D*lap(self.N, self.dx)*self.dt + self.drift*self.N*lap(self.R, self.dx)
-        for s in self.states.values():
-            z = np.zeros_like(self.Idx, dtype=np.bool)
-            z[np.where(self.Idx == s.idx)] = True
-            z = (D*lap(z, self.dx) + self.drift*z*lap(self.R, self.dx)).astype(np.bool)
-            self.Idx[np.where(z==True)] = s.idx
-            self.Idx[np.where(self.N<=0.001)] = -1
-
-
         #Geographical update
+        #---------------------------------------------------------------------------------------------------------
         remove = []
         for s in self.states.values():
             if s.area(self.Idx, self.dx)==0:
@@ -147,9 +103,58 @@ class Grid:
         if len(self.states) == 0:
             return
 
+        # Renewal
+        #---------------------------------------------------------------------------------------------------------
+        self.R += self.r0*self.R*(1-(self.R/(self.Rmax+1e-6)))*self.dt
+
+        # Production
+        #---------------------------------------------------------------------------------------------------------
+        self.Z = self.c*self.eps*self.R*I_filter
+        self.R -= self.eps*self.R*I_filter
+
+        #Taxes
+        #---------------------------------------------------------------------------------------------------------
+        self.Zpub = self.alpha*self.Z*I_filter
+        self.Zpriv = (1-self.alpha)*self.Z*I_filter
+
+        #Consumption
+        #---------------------------------------------------------------------------------------------------------
+        self.Zpriv -= ((self.c0*self.Z*self.N)/(self.Zdem + self.Z))*self.dt*I_filter
+        satisfaction = (self.Zpriv - self.Zdem)*I_filter
+
+        #Demgraphy (Bazykin model)
+        #---------------------------------------------------------------------------------------------------------
+        self.G = self.chi*((self.c0*self.Z*self.N)/(self.Zdem + self.Z)) - self.n0 - (self.N/self.Nbar)
+        D = self.D*np.exp(-(self.G/np.linalg.norm(self.G)))
+
+        self.N += self.G*self.N*self.dt*I_filter + D*lap(self.N, self.dx)*self.dt + self.drift*self.N*lap(self.R, self.dx)
+        for s in self.states.values():
+            z = np.zeros_like(self.Idx, dtype=np.bool)
+            z[np.where(self.Idx == s.idx)] = True
+            z = (D*lap(z, self.dx) + self.drift*z*lap(self.R, self.dx)).astype(np.bool)
+            self.Idx[np.where(z==True)] = s.idx
+            self.Idx[np.where(self.N<=0.001)] = -1
+
+        #Asabiya
+        #---------------------------------------------------------------------------------------------------------
+        self.S += self.s0*self.S*(1-self.S)*self.dt*I_filter
+
+        for id in np.where(self.S < 0.02):
+            self.Idx[id] = self.state_idmax
+            self.states[self.state_idmax]=State(np.random.rand(3),self.state_idmax,self.c,
+                                                self.eps, self.c1,self.alpha,
+                                                self.s0, self.h,self.z)
+            self.state_idmax += 1
+
+
         #Power
-        self.bary_map[np.where(self.Idx == s.idx)] = s.barycenter(self.x, self.Idx)
-        self.P[np.where(self.Idx == s.idx)] = s.area(self.Idx, self.dx)*self.S[np.where(self.Idx == s.idx)]*np.exp(-(np.linalg.norm(self.x-self.bary_map)/self.h))
+        #---------------------------------------------------------------------------------------------------------
+        mS = np.zeros_like(self.S)
+        for s in self.states.values():
+            mS[np.where(self.Idx == s.idx)] = np.sum(self.S[np.where(self.Idx == s.idx)])
+            self.bary_map[np.where(self.Idx == s.idx)] = s.barycenter(self.x, self.Idx)
+        self.P = mS*np.exp(-(np.linalg.norm(self.x-self.bary_map)/self.h))
+
 
 
     def get_img(self):
@@ -167,4 +172,4 @@ class Grid:
 
 
         return (out*255).astype(np.uint8)
-        #return self.N
+        #return self.P
