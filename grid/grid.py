@@ -12,13 +12,14 @@ from scipy.ndimage import convolve
 class Grid:
     """The grid class"""
 
-    def __init__(self,  Ns, Rs, Domain, c ,eps ,c1 ,alpha ,s0 ,h ,z, dt):
+    def __init__(self,  Ns, Rs, Domain, c ,eps ,c1 ,alpha ,s0 ,h ,z, Nbar, dt):
         """Constructor of the grid
 
         N -- pops
         Rs -- resources
         Domain -- The domain on which the simulation will be made
         c ,eps ,c1 ,alpha ,s0 ,h ,z -- Initial values for each state
+        Nbar -- barbarian population (pop)
         dt -- Time step (year)
         """
 
@@ -96,7 +97,8 @@ class Grid:
 
         self.dt = dt
 
-        self.Nbar = Ns.Nbar
+        self.Nmax = Ns.Nmax
+        self.Nbar = Nbar
         self.bary_map = np.zeros((*self.dom.I.shape,2))
         for s in self.states.values():
             self.bary_map[np.where(self.Idx == s.idx)] = s.barycenter(self.x, self.Idx)
@@ -148,7 +150,7 @@ class Grid:
         #Demgraphy (Bazykin model)
         #---------------------------------------------------------------------------------------------------------
         death = - self.n0
-        limit = - (self.N/self.Nbar)
+        limit = - (self.N/self.Nmax)
         self.G = death+limit
         migration = self.D*convolve(self.N, self.K) - self.intK*self.N
 
@@ -156,11 +158,11 @@ class Grid:
 
         self.N += dN*self.dom.I
         for s in self.states.values():
-            z = np.zeros_like(self.Idx, dtype=np.bool)
+            z = np.zeros_like(self.Idx)
             z[np.where(self.Idx == s.idx)] = True
-            z = (self.D*convolve(z, self.K)).astype(np.bool)
-            self.Idx[np.where(z==True)] = s.idx
-            self.Idx[np.where(self.N<=0.01*self.Nbar)] = -1
+            z = (self.D*convolve(z, self.K))
+            self.Idx[np.where(z>0)] = s.idx
+            self.Idx[np.where(self.N<=self.Nbar)] = -1
 
 
         #Asabiya
@@ -199,5 +201,5 @@ class Grid:
         #out[np.where(self.N>0)] = (self.N/np.max(self.N))*np.array([1,0,0])
 
 
-        #return (out*255).astype(np.uint8)
-        return self.N
+        return (out*255).astype(np.uint8)
+        #return self.Idx
