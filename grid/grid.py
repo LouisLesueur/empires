@@ -11,12 +11,13 @@ from maps.domain import State
 class Grid:
     """The grid class"""
 
-    def __init__(self,  Ns, Rs, Domain, dt):
+    def __init__(self,  Ns, Rs, Domain, c ,eps ,c1 ,alpha ,s0 ,h ,z):
         """Constructor of the grid
 
         N -- pops
         Rs -- resources
         Domain -- The domain on which the simulation will be made
+        c ,eps ,c1 ,alpha ,s0 ,h ,z -- Initial values for each state
         dt -- Time step (year)
         """
 
@@ -27,6 +28,8 @@ class Grid:
         self.D = np.zeros_like(self.dom.I)
         self.P = np.zeros_like(self.dom.I)
         self.Z = np.zeros_like(self.dom.I)
+        self.Zpub = np.zeros_like(self.dom.I)
+        self.Zpriv = np.zeros_like(self.dom.I)
         self.G = np.zeros_like(self.dom.I)
         self.S = np.zeros_like(self.dom.I)+0.5
         self.R = 0.75*Rs.Rmax*np.ones_like(self.dom.I)*self.dom.I
@@ -41,18 +44,18 @@ class Grid:
 
         self.states = {}
         self.time = 0
-        self.dt = dt
+        self.dt = 0
 
         self.r0 = Rs.r0*self.dom.I_r
         self.Rmax = Rs.Rmax*self.dom.I_topo
 
-        self.c = 1
-        self.eps = 0.7
-        self.c1 = 3
-        self.alpha = 0.2
-        self.s0 = 0.4
-        self.h = 10
-        self.z = 100
+        self.c = c
+        self.eps = eps
+        self.c1 = c1
+        self.alpha = alpha
+        self.s0 = s0
+        self.h = h
+        self.z = z
 
         for i,idx in enumerate(Ns.start_loc):
             self.state_idmax = i
@@ -87,7 +90,8 @@ class Grid:
 
     def update(self):
         """Update the grid by one time step"""
-        self.time += self.dt
+
+
         I_filter = self.Idx>-1
 
         #Geographical update
@@ -103,37 +107,53 @@ class Grid:
         if len(self.states) == 0:
             return
 
+        #Consumption
+        #---------------------------------------------------------------------------------------------------------
+        conso = self.c0/(self.Rdem + self.R)
+
         # Renewal
         #---------------------------------------------------------------------------------------------------------
-        self.R += self.r0*self.R*(1-(self.R/(self.Rmax+1e-6)))*self.dt
+        renew = self.r0
+        limit = -self.r0*(self.R/self.Rmax)
 
-        # Production
-        #---------------------------------------------------------------------------------------------------------
-        self.Z = self.c*self.eps*self.R*I_filter
-        self.R -= self.eps*self.R*I_filter
+        dR = (renew+limit-conso*self.N)*self.R
+        self.R += dR*self.dt
+
 
         #Taxes
         #---------------------------------------------------------------------------------------------------------
-        self.Zpub = self.alpha*self.Z*I_filter
-        self.Zpriv = (1-self.alpha)*self.Z*I_filter
+        self.Z = self.c*conso*self.N*self.R*self.dt
+        self.Zpub = self.alpha*self.Z
+        self.Zpriv = (1-self.alpha)*self.Z
 
-        #Consumption
-        #---------------------------------------------------------------------------------------------------------
-        self.Zpriv -= ((self.c0*self.Z*self.N)/(self.Zdem + self.Z))*self.dt*I_filter
-        satisfaction = (self.Zpriv - self.Zdem)*I_filter
+        satisfaction = (self.Zpriv - self.Rdem)
+
+
 
         #Demgraphy (Bazykin model)
         #---------------------------------------------------------------------------------------------------------
-        self.G = self.chi*((self.c0*self.Z*self.N)/(self.Zdem + self.Z)) - self.n0 - (self.N/self.Nbar)
+        death = - self.n0
+        limit = - (self.N/self.Nbar)
+        self.G = death+limit+self.chi*conso*self.R
         D = self.D*np.exp(-(self.G/np.linalg.norm(self.G)))
+        migration = D*lap(self.N, self.dx)
+        shift = self.drift*self.N*lap(self.R, self.dx)
 
-        self.N += self.G*self.N*self.dt*I_filter + D*lap(self.N, self.dx)*self.dt + self.drift*self.N*lap(self.R, self.dx)
+
+        #Compute time step
+        self.dt = ((self.dx**2)/(4*np.max(D)))*0.9
+        self.time += self.dt
+
+        dN = (self.G*self.N + migration)*self.dt
+
+        self.N += dN
         for s in self.states.values():
             z = np.zeros_like(self.Idx, dtype=np.bool)
             z[np.where(self.Idx == s.idx)] = True
-            z = (D*lap(z, self.dx) + self.drift*z*lap(self.R, self.dx)).astype(np.bool)
+            z = (D*lap(z, self.dx)).astype(np.bool)
             self.Idx[np.where(z==True)] = s.idx
-            self.Idx[np.where(self.N<=0.001)] = -1
+            self.Idx[np.where(self.N<=0.8*self.Nbar)] = -1
+
 
         #Asabiya
         #---------------------------------------------------------------------------------------------------------
@@ -171,5 +191,5 @@ class Grid:
         #out[np.where(self.N>0)] = (self.N/np.max(self.N))*np.array([1,0,0])
 
 
-        return (out*255).astype(np.uint8)
-        #return self.P
+        #return (out*255).astype(np.uint8)
+        return self.R
