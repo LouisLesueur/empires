@@ -7,11 +7,12 @@ This module combines domain, pops and resources to make the simulation
 import numpy as np
 from grid.mathutils import grad_grad, lap
 from maps.domain import State
+from scipy.ndimage import convolve
 
 class Grid:
     """The grid class"""
 
-    def __init__(self,  Ns, Rs, Domain, c ,eps ,c1 ,alpha ,s0 ,h ,z):
+    def __init__(self,  Ns, Rs, Domain, c ,eps ,c1 ,alpha ,s0 ,h ,z, dt):
         """Constructor of the grid
 
         N -- pops
@@ -25,14 +26,14 @@ class Grid:
         self.dx = Domain.dx
 
         self.N = np.zeros_like(self.dom.I)
-        self.D = np.zeros_like(self.dom.I)
         self.P = np.zeros_like(self.dom.I)
         self.Z = np.zeros_like(self.dom.I)
         self.Zpub = np.zeros_like(self.dom.I)
         self.Zpriv = np.zeros_like(self.dom.I)
         self.G = np.zeros_like(self.dom.I)
+        self.conso = np.zeros_like(self.dom.I)
         self.S = np.zeros_like(self.dom.I)+0.5
-        self.R = 0.75*Rs.Rmax*np.ones_like(self.dom.I)*self.dom.I
+
         self.Idx = np.zeros_like(self.dom.I)-1
 
 
@@ -44,10 +45,10 @@ class Grid:
 
         self.states = {}
         self.time = 0
-        self.dt = 0
 
-        self.r0 = Rs.r0*self.dom.I_r
+        self.r0 = Rs.r0*self.dom.I_topo*self.dom.I
         self.Rmax = Rs.Rmax*self.dom.I_topo
+        self.R = 0.75*self.Rmax*self.dom.I
 
         self.c = c
         self.eps = eps
@@ -80,8 +81,21 @@ class Grid:
         self.Zdem = self.c*Ns.Rdem
         self.n0 = Ns.n0
         self.chi = Ns.chi
-        self.D = Ns.D*self.dom.I_topo
-        self.drift = Ns.drift
+
+        #self.D = Ns.D*self.dom.I_topo
+        # self.D = Ns.D*np.array([[1/(self.dx**2), 1/(self.dx**2), 1/(self.dx**2)],
+        #                        [1/(self.dx**2), 1-(8/(self.dx**2)), 1/(self.dx**2)],
+        #                        [1/(self.dx**2), 1/(self.dx**2), 1/(self.dx**2)]])
+
+        self.D = Ns.D
+        self.K = np.array([[np.sqrt(2),1,np.sqrt(2)],
+                           [1,4+4*np.sqrt(2),1],
+                           [np.sqrt(2),2,np.sqrt(2)]])/(16*self.dx**2)
+
+        self.intK = np.sum(self.K)*(self.dx**2)
+
+        self.dt = dt
+
         self.Nbar = Ns.Nbar
         self.bary_map = np.zeros((*self.dom.I.shape,2))
         for s in self.states.values():
@@ -91,6 +105,7 @@ class Grid:
     def update(self):
         """Update the grid by one time step"""
 
+        self.time += self.dt
 
         I_filter = self.Idx>-1
 
@@ -109,24 +124,24 @@ class Grid:
 
         #Consumption
         #---------------------------------------------------------------------------------------------------------
-        conso = self.c0/(self.Rdem + self.R)
+        self.conso = self.c0*(self.R/(self.Rdem + self.R))*self.N
 
         # Renewal
         #---------------------------------------------------------------------------------------------------------
         renew = self.r0
         limit = -self.r0*(self.R/self.Rmax)
 
-        dR = (renew+limit-conso*self.N)*self.R
+        dR = (renew+limit)*self.R-self.conso
         self.R += dR*self.dt
 
 
         #Taxes
         #---------------------------------------------------------------------------------------------------------
-        self.Z = self.c*conso*self.N*self.R*self.dt
+        self.Z = self.c*self.conso*self.dt
         self.Zpub = self.alpha*self.Z
         self.Zpriv = (1-self.alpha)*self.Z
 
-        satisfaction = (self.Zpriv - self.Rdem)
+        satisfaction = (self.Zpriv - self.Zdem)
 
 
 
@@ -134,25 +149,18 @@ class Grid:
         #---------------------------------------------------------------------------------------------------------
         death = - self.n0
         limit = - (self.N/self.Nbar)
-        self.G = death+limit+self.chi*conso*self.R
-        D = self.D*np.exp(-(self.G/np.linalg.norm(self.G)))
-        migration = D*lap(self.N, self.dx)
-        shift = self.drift*self.N*lap(self.R, self.dx)
+        self.G = death+limit
+        migration = self.D*convolve(self.N, self.K) - self.intK*self.N
 
+        dN = (self.G*self.N +self.chi*self.conso + migration)*self.dt
 
-        #Compute time step
-        self.dt = ((self.dx**2)/(4*np.max(D)))*0.9
-        self.time += self.dt
-
-        dN = (self.G*self.N + migration)*self.dt
-
-        self.N += dN
+        self.N += dN*self.dom.I
         for s in self.states.values():
             z = np.zeros_like(self.Idx, dtype=np.bool)
             z[np.where(self.Idx == s.idx)] = True
-            z = (D*lap(z, self.dx)).astype(np.bool)
+            z = (self.D*convolve(z, self.K)).astype(np.bool)
             self.Idx[np.where(z==True)] = s.idx
-            self.Idx[np.where(self.N<=0.8*self.Nbar)] = -1
+            self.Idx[np.where(self.N<=0.01*self.Nbar)] = -1
 
 
         #Asabiya
@@ -192,4 +200,4 @@ class Grid:
 
 
         #return (out*255).astype(np.uint8)
-        return self.R
+        return self.N
