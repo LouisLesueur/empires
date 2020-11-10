@@ -5,7 +5,7 @@ This module combines domain, pops and resources to make the simulation
 
 
 import numpy as np
-from grid.mathutils import grad_grad, lap
+from grid.mathutils import grad_grad, lap, compute_bound
 from maps.domain import State
 from scipy.ndimage import convolve
 
@@ -26,15 +26,18 @@ class Grid:
         self.dom = Domain
         self.dx = Domain.dx
 
+        self.n = self.dom.I.shape[0]
+        self.m = self.dom.I.shape[1]
+
+        self.x, self.y = np.meshgrid(np.arange(self.m)*self.dx, np.arange(self.n)*self.dx)
+
         self.N = np.zeros_like(self.dom.I)
         self.P = np.zeros_like(self.dom.I)
         self.Z = np.zeros_like(self.dom.I)
         self.Zpub = np.zeros_like(self.dom.I)
         self.Zpriv = np.zeros_like(self.dom.I)
-        self.G = np.zeros_like(self.dom.I)
         self.conso = np.zeros_like(self.dom.I)
         self.S = np.zeros_like(self.dom.I)+0.5
-
         self.Idx = np.zeros_like(self.dom.I)-1
 
 
@@ -83,19 +86,12 @@ class Grid:
         self.n0 = Ns.n0
         self.chi = Ns.chi
 
-        #self.D = Ns.D*self.dom.I_topo
-        # self.D = Ns.D*np.array([[1/(self.dx**2), 1/(self.dx**2), 1/(self.dx**2)],
-        #                        [1/(self.dx**2), 1-(8/(self.dx**2)), 1/(self.dx**2)],
-        #                        [1/(self.dx**2), 1/(self.dx**2), 1/(self.dx**2)]])
-
         self.D = Ns.D
-        self.K = np.array([[np.sqrt(2),1,np.sqrt(2)],
-                           [1,4+4*np.sqrt(2),1],
-                           [np.sqrt(2),2,np.sqrt(2)]])/(16*self.dx**2)
-
-        self.intK = np.sum(self.K)*(self.dx**2)
+        self.drift = Ns.drift
 
         self.dt = dt
+        if(self.dt >= (self.dx**2)/(4*self.D)):
+            print("Warning, too large dt !")
 
         self.Nmax = Ns.Nmax
         self.Nbar = Nbar
@@ -147,22 +143,28 @@ class Grid:
 
 
 
-        #Demgraphy (Bazykin model)
+        #Demgraphy (Bazykin model) and migration
         #---------------------------------------------------------------------------------------------------------
+
+        dist = np.array([[np.sqrt(2),1,np.sqrt(2)],
+                         [1,         0,         1],
+                         [np.sqrt(2),1,np.sqrt(2)]])*(self.dx)
+
         death = - self.n0
         limit = - (self.N/self.Nmax)
-        self.G = death+limit
-        migration = self.D*convolve(self.N, self.K) - self.intK*self.N
+        G = death+limit
 
-        dN = (self.G*self.N +self.chi*self.conso + migration)*self.dt
-
-        self.N += dN*self.dom.I
+        migration = self.D*lap(self.N, self.dx) + self.drift*self.N*lap(self.R, self.dx)
         for s in self.states.values():
             z = np.zeros_like(self.Idx)
             z[np.where(self.Idx == s.idx)] = True
-            z = (self.D*convolve(z, self.K))
+            z = self.D*lap(z, self.dx) + self.drift*z*lap(self.R, self.dx)
             self.Idx[np.where(z>0)] = s.idx
             self.Idx[np.where(self.N<=self.Nbar)] = -1
+
+
+        dN = (G*self.N +self.chi*self.conso+migration)*self.dt
+        self.N += dN*self.dom.I
 
 
         #Asabiya
@@ -198,8 +200,9 @@ class Grid:
 
         for s in self.states.values():
             out[np.where(self.Idx==s.idx)] = s.color
-        #out[np.where(self.N>0)] = (self.N/np.max(self.N))*np.array([1,0,0])
 
+        bound = compute_bound(self.Idx)[0]
+        out[np.where(bound == 1)] = np.array([0,0,0])
 
         return (out*255).astype(np.uint8)
-        #return self.Idx
+        #return self.N/np.max(self.N)

@@ -20,3 +20,12 @@ def grad_grad(D, A, dx):
 def lap(A, dx):
     A_pad = np.pad(A, (1,1), 'reflect')
     return ((np.roll(A_pad,-1,axis=1) - 2*A_pad + np.roll(A_pad,1,axis=1)) + (np.roll(A_pad,-1,axis=0) - 2*A_pad + np.roll(A_pad,1,axis=0)))[1:-1,1:-1]/(dx*dx)
+
+
+def compute_bound(mask):
+    bound_mask = np.zeros_like(mask)
+    bound_mask[np.where(lap(mask,1)>0)] = 1
+    bound_idx = np.array(np.where(bound_mask==1)).T
+    bound_len = len(bound_idx)
+
+    return bound_mask, bound_idx, bound_len

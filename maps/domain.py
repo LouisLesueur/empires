@@ -81,7 +81,7 @@ class Res:
 class Pop:
     """Population class"""
 
-    def __init__(self, start_loc,N_start,c0,Rdem,chi,n0,Nmax,D):
+    def __init__(self, start_loc,N_start,c0,Rdem,chi,n0,Nmax,D,drift):
         """Population constructor
 
         Starting:
@@ -96,6 +96,7 @@ class Pop:
             Nmax -- carrying capacity (pop)
         Migration:
             D -- Diffusion coefficient
+            drift -- Drift coefficient
         """
 
         self.start_loc = start_loc
@@ -106,6 +107,7 @@ class Pop:
         self.n0 = n0
         self.Nmax = Nmax
         self.D = D
+        self.drift = drift
 
 
 class State:
