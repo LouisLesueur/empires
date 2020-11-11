@@ -5,7 +5,7 @@ This module combines domain, pops and resources to make the simulation
 
 
 import numpy as np
-from grid.mathutils import grad_grad, lap, compute_bound
+from grid.mathutils import grad_grad, lap, compute_bound, bound_lap
 from maps.domain import State
 from scipy.ndimage import convolve
 
@@ -79,6 +79,7 @@ class Grid:
         self.Nmax = Ns.Nmax*self.dom.I_topo
         self.Nbar = Nbar
         self.bary_map = np.zeros((*self.dom.I.shape,2))
+        self.conflicts = np.zeros((*self.dom.I.shape,2))
         for s in self.states.values():
             self.bary_map[np.where(self.Idx == s.idx)] = s.barycenter(self.x, self.Idx)
 
@@ -123,14 +124,16 @@ class Grid:
 
         self.satisfaction[I_filter] = (self.Rpriv - self.Rdem)[I_filter]
 
-        #Rebellion and colonies
+        #Revolts
         #---------------------------------------------------------------------------------------------------------
-        self.Idx[np.where(self.satisfaction < -12)] = self.state_idmax
-        self.states[self.state_idmax]=State(np.random.rand(3),self.state_idmax,self.alpha)
-        self.state_idmax += 1
+        insatisfaction = -13
+        if len(np.array(np.where(self.satisfaction < insatisfaction)).T) > 0:
+            self.Idx[np.where(self.satisfaction < insatisfaction)] = self.state_idmax
+            self.states[self.state_idmax]=State(np.random.rand(3),self.state_idmax,self.alpha)
+            self.state_idmax += len(np.array(np.where(self.satisfaction < insatisfaction)).T)
 
 
-        #Demgraphy (Bazykin model) and migration
+        #Demography (Bazykin model + migrations)
         #---------------------------------------------------------------------------------------------------------
         dist = np.array([[np.sqrt(2),1,np.sqrt(2)],
                          [1,         0,         1],
@@ -141,16 +144,32 @@ class Grid:
         G = death+limit
 
         migration = self.D*lap(self.N, self.dx) + self.drift*self.N*lap(self.R, self.dx)
-        for s in self.states.values():
-            z = np.zeros_like(self.Idx)
-            z[np.where(self.Idx == s.idx)] = True
-            z = self.D*lap(z, self.dx) + self.drift*z*lap(self.R, self.dx)
-            self.Idx[np.where(z>0)] = s.idx
-            self.Idx[np.where(self.N<=self.Nbar)] = -1
-
+        self.Idx, self.conflicts = bound_lap(self.Idx)
+        self.Idx[np.where(self.N<=self.Nbar)] = -1
 
         dN = (G*self.N +self.chi*self.conso+migration)*self.dt
         self.N += dN*self.dom.I
+
+        #Wars
+        #---------------------------------------------------------------------------------------------------------
+        common_boundaries = np.array(np.where(self.Idx == -2)).T
+        done = []
+        if len(common_boundaries) > 0:
+            Nwars = 10
+            for _ in range(Nwars):
+                battle = common_boundaries[np.random.randint(0, len(common_boundaries))]
+                if battle not in np.array(done):
+                    protagonists = []
+                    power = []
+                    for i in range(-1,2):
+                        for j in range(-1,2):
+                            if 0 < battle[0]+i < self.Idx.shape[0] and 0 < battle[1]+j <  self.Idx.shape[1]:
+                                if self.Idx[battle[0]+i, battle[1]+j] != -1:
+                                    protagonists.append(int(self.Idx[battle[0]+i, battle[1]+j]))
+                                    power.append(np.mean(self.Rpub[self.Idx == int(self.Idx[battle[0]+i, battle[1]+j])]))
+                    self.Idx[battle[0],battle[1]] = protagonists[np.argmax(power)]
+                    done.append(battle)
+
 
 
 
@@ -166,9 +185,11 @@ class Grid:
         for s in self.states.values():
             out[np.where(self.Idx==s.idx)] = s.color
 
+
         bound = compute_bound(self.Idx)[0]
         out[np.where(bound == 1)] = np.array([0,0,0])
 
+
         return (out*255).astype(np.uint8)
         #return self.satisfaction<-12
-        #return self.N
+        #return self.Idx

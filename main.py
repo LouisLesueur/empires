@@ -10,8 +10,8 @@ from PIL import Image
 
 
 niter = 200
-scale = 20
-lenN = 15
+scale = 50
+lenN = 100
 
 dt = 0.01
 dx = 10 #km
@@ -66,12 +66,12 @@ def animate(i):
     for _ in range(scale):
         sim.update()
     im.set_array(sim.get_img())
-    ax.set_title(f'Year: {i*scale*dt}')
+    ax.set_title(f'Year: {i*scale*dt}, {len(sim.states)} states')
 
     print(f"step {i}\r", sep=' ', end='', flush=True)
     return [im]
 
 writer = PillowWriter(fps=15)
 anim = FuncAnimation(fig, animate, frames = niter, blit=False, interval = 100)
-#anim.save('out.gif', writer=writer)
-plt.show()
+anim.save('out.gif', writer=writer)
+#plt.show()
