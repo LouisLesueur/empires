@@ -12,7 +12,7 @@ from scipy.ndimage import convolve
 class Grid:
     """The grid class"""
 
-    def __init__(self,  Ns, Rs, Domain, c ,eps ,c1 ,alpha ,s0 ,h ,z, Nbar, dt):
+    def __init__(self,  Ns, Rs, Domain, c ,eps ,c1 ,alpha, Nbar, dt):
         """Constructor of the grid
 
         N -- pops
@@ -32,12 +32,11 @@ class Grid:
         self.x, self.y = np.meshgrid(np.arange(self.m)*self.dx, np.arange(self.n)*self.dx)
 
         self.N = np.zeros_like(self.dom.I)
-        self.P = np.zeros_like(self.dom.I)
         self.Z = np.zeros_like(self.dom.I)
         self.Zpub = np.zeros_like(self.dom.I)
         self.Zpriv = np.zeros_like(self.dom.I)
         self.conso = np.zeros_like(self.dom.I)
-        self.S = np.zeros_like(self.dom.I)+0.5
+        self.satisfaction = np.zeros_like(self.dom.I)
         self.Idx = np.zeros_like(self.dom.I)-1
 
 
@@ -58,9 +57,6 @@ class Grid:
         self.eps = eps
         self.c1 = c1
         self.alpha = alpha
-        self.s0 = s0
-        self.h = h
-        self.z = z
 
         for i,idx in enumerate(Ns.start_loc):
             self.state_idmax = i
@@ -74,8 +70,7 @@ class Grid:
                             self.N[idx[0]+id, idx[1]+jd] = Ns.N_start[i]
 
             self.states[i] = State(np.random.rand(3),i,self.c,
-                                   self.eps, self.c1,self.alpha,
-                                   self.s0, self.h,self.z)
+                                   self.eps, self.c1,self.alpha)
 
         self.N*=self.dom.I
 
@@ -93,7 +88,7 @@ class Grid:
         if(self.dt >= (self.dx**2)/(4*self.D)):
             print("Warning, too large dt !")
 
-        self.Nmax = Ns.Nmax
+        self.Nmax = Ns.Nmax*self.dom.I_topo
         self.Nbar = Nbar
         self.bary_map = np.zeros((*self.dom.I.shape,2))
         for s in self.states.values():
@@ -114,7 +109,6 @@ class Grid:
             if s.area(self.Idx, self.dx)==0:
                 remove.append(s.idx)
         for r in remove:
-            self.P[np.where(self.Idx == self.states[r].idx)] = 0
             del self.states[r]
 
         if len(self.states) == 0:
@@ -123,6 +117,7 @@ class Grid:
         #Consumption
         #---------------------------------------------------------------------------------------------------------
         self.conso = self.c0*(self.R/(self.Rdem + self.R))*self.N
+        self.satisfaction = (self.R - self.Rdem)
 
         # Renewal
         #---------------------------------------------------------------------------------------------------------
@@ -135,12 +130,17 @@ class Grid:
 
         #Taxes
         #---------------------------------------------------------------------------------------------------------
-        self.Z = self.c*self.conso*self.dt
-        self.Zpub = self.alpha*self.Z
-        self.Zpriv = (1-self.alpha)*self.Z
+        self.Z = self.c*self.conso*self.dt*I_filter
+        self.Zpub = self.alpha*self.Z*I_filter
+        self.Zpriv = (1-self.alpha)*self.Z*I_filter
 
-        satisfaction = (self.Zpriv - self.Zdem)
+        self.satisfaction[np.where(I_filter>0)] = (self.Zpriv - self.Zdem)[np.where(I_filter>0)]
 
+        for id in np.array(np.where(self.satisfaction < -12)).T:
+            self.Idx[id[0],id[1]] = self.state_idmax
+            self.states[self.state_idmax]=State(np.random.rand(3),self.state_idmax,self.c,
+                                                self.eps, self.c1,self.alpha)
+            self.state_idmax += 1
 
 
         #Demgraphy (Bazykin model) and migration
@@ -167,27 +167,6 @@ class Grid:
         self.N += dN*self.dom.I
 
 
-        #Asabiya
-        #---------------------------------------------------------------------------------------------------------
-        self.S += self.s0*self.S*(1-self.S)*self.dt*I_filter
-
-        for id in np.where(self.S < 0.02):
-            self.Idx[id] = self.state_idmax
-            self.states[self.state_idmax]=State(np.random.rand(3),self.state_idmax,self.c,
-                                                self.eps, self.c1,self.alpha,
-                                                self.s0, self.h,self.z)
-            self.state_idmax += 1
-
-
-        #Power
-        #---------------------------------------------------------------------------------------------------------
-        mS = np.zeros_like(self.S)
-        for s in self.states.values():
-            mS[np.where(self.Idx == s.idx)] = np.sum(self.S[np.where(self.Idx == s.idx)])
-            self.bary_map[np.where(self.Idx == s.idx)] = s.barycenter(self.x, self.Idx)
-        self.P = mS*np.exp(-(np.linalg.norm(self.x-self.bary_map)/self.h))
-
-
 
     def get_img(self):
         """returns the repartition of all pops"""
@@ -205,4 +184,4 @@ class Grid:
         out[np.where(bound == 1)] = np.array([0,0,0])
 
         return (out*255).astype(np.uint8)
-        #return self.N/np.max(self.N)
+        #return self.satisfaction<-12

@@ -113,7 +113,7 @@ class Pop:
 class State:
     """State class"""
 
-    def __init__(self, color, idx,c,eps,c1,alpha,sig,h,z):
+    def __init__(self, color, idx,c,eps,c1,alpha):
         """State constructor
         Code caracteristics:
             color -- color (array)
@@ -125,11 +125,6 @@ class State:
             c1 -- C growth rate (year^-1)
         Taxes parameters:
             alpha -- production taxation (%.year^-1)
-        Asabiya:
-            s0 -- Asabiya growth rate
-        Power:
-            h -- power decline speed with distance (km)
-            z -- power decline speed with money (money)
         """
 
         self.color = color
@@ -138,9 +133,7 @@ class State:
         self.eps = eps
         self.c1 = c1
         self.alpha = alpha
-        self.sig = sig
-        self.h = h
-        self.z = z
+
 
     def area(self,Idx,dx):
         return np.sum((Idx == self.idx).astype(np.int32))*dx**2
