@@ -12,13 +12,13 @@ from scipy.ndimage import convolve
 class Grid:
     """The grid class"""
 
-    def __init__(self,  Ns, Rs, Domain, c ,eps ,c1 ,alpha, Nbar, dt):
+    def __init__(self,  Ns, Rs, Domain, alpha, Nbar, dt):
         """Constructor of the grid
 
         N -- pops
         Rs -- resources
         Domain -- The domain on which the simulation will be made
-        c ,eps ,c1 ,alpha ,s0 ,h ,z -- Initial values for each state
+        alpha -- Initial values for each state
         Nbar -- barbarian population (pop)
         dt -- Time step (year)
         """
@@ -53,9 +53,6 @@ class Grid:
         self.Rmax = Rs.Rmax*self.dom.I_topo
         self.R = 0.75*self.Rmax*self.dom.I
 
-        self.c = c
-        self.eps = eps
-        self.c1 = c1
         self.alpha = alpha
 
         for i,idx in enumerate(Ns.start_loc):
@@ -69,15 +66,13 @@ class Grid:
                             self.Idx[idx[0]+id, idx[1]+jd] = i
                             self.N[idx[0]+id, idx[1]+jd] = Ns.N_start[i]
 
-            self.states[i] = State(np.random.rand(3),i,self.c,
-                                   self.eps, self.c1,self.alpha)
+            self.states[i] = State(np.random.rand(3),i, self.alpha)
 
         self.N*=self.dom.I
 
 
         self.c0 = Ns.c0
         self.Rdem = Ns.Rdem
-        self.Zdem = self.c*Ns.Rdem
         self.n0 = Ns.n0
         self.chi = Ns.chi
 
@@ -130,16 +125,14 @@ class Grid:
 
         #Taxes
         #---------------------------------------------------------------------------------------------------------
-        self.Z = self.c*self.conso*self.dt*I_filter
-        self.Zpub = self.alpha*self.Z*I_filter
-        self.Zpriv = (1-self.alpha)*self.Z*I_filter
+        self.Rpub = self.alpha*self.R*I_filter
+        self.Rpriv = (1-self.alpha)*self.R*I_filter
 
-        self.satisfaction[np.where(I_filter>0)] = (self.Zpriv - self.Zdem)[np.where(I_filter>0)]
+        self.satisfaction[np.where(I_filter>0)] = (self.Rpriv - self.Rdem)[np.where(I_filter>0)]
 
         for id in np.array(np.where(self.satisfaction < -12)).T:
             self.Idx[id[0],id[1]] = self.state_idmax
-            self.states[self.state_idmax]=State(np.random.rand(3),self.state_idmax,self.c,
-                                                self.eps, self.c1,self.alpha)
+            self.states[self.state_idmax]=State(np.random.rand(3),self.state_idmax,self.alpha)
             self.state_idmax += 1
 
 
@@ -185,3 +178,4 @@ class Grid:
 
         return (out*255).astype(np.uint8)
         #return self.satisfaction<-12
+        #return self.N

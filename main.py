@@ -49,9 +49,6 @@ R =  Res(0.5, #resource natural growth
 sim = Grid(N,
            R,
            Europe,
-           1, # production rate (money.resource^-1.year^-1)
-           1, # eps -- ressource extraction capacity (%)
-           0.01, #C growth rate (year^-1)
            0.01, #alpha -- production taxation (%.year^-1)
            1, #barbarian population
            dt)
@@ -76,5 +73,5 @@ def animate(i):
 
 writer = PillowWriter(fps=15)
 anim = FuncAnimation(fig, animate, frames = niter, blit=False, interval = 100)
-anim.save('out.gif', writer=writer)
-#plt.show()
+#anim.save('out.gif', writer=writer)
+plt.show()

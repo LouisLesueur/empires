@@ -113,25 +113,17 @@ class Pop:
 class State:
     """State class"""
 
-    def __init__(self, color, idx,c,eps,c1,alpha):
+    def __init__(self, color, idx, alpha):
         """State constructor
         Code caracteristics:
             color -- color (array)
             idx -- state index
-        Production parameters:
-            c -- production rate (money.resource^-1.year^-1)
-            eps -- ressource extraction capacity (%)
-        Cultural assimilation:
-            c1 -- C growth rate (year^-1)
         Taxes parameters:
             alpha -- production taxation (%.year^-1)
         """
 
         self.color = color
         self.idx = idx
-        self.c =c
-        self.eps = eps
-        self.c1 = c1
         self.alpha = alpha
 
 
