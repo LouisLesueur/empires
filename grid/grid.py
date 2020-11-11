@@ -32,21 +32,14 @@ class Grid:
         self.x, self.y = np.meshgrid(np.arange(self.m)*self.dx, np.arange(self.n)*self.dx)
 
         self.N = np.zeros_like(self.dom.I)
-        self.Z = np.zeros_like(self.dom.I)
-        self.Zpub = np.zeros_like(self.dom.I)
-        self.Zpriv = np.zeros_like(self.dom.I)
+        self.Rpub = np.zeros_like(self.dom.I)
+        self.Rpriv = np.zeros_like(self.dom.I)
         self.conso = np.zeros_like(self.dom.I)
         self.satisfaction = np.zeros_like(self.dom.I)
         self.Idx = np.zeros_like(self.dom.I)-1
 
 
 
-        self.x = np.zeros((*self.dom.I.shape,2))
-        for i in range(self.dom.I.shape[0]):
-            for j in range(self.dom.shape[1]):
-                self.x[i,j] = np.array([i,j])*self.dx
-
-        self.states = {}
         self.time = 0
 
         self.r0 = Rs.r0*self.dom.I_topo*self.dom.I
@@ -54,7 +47,7 @@ class Grid:
         self.R = 0.75*self.Rmax*self.dom.I
 
         self.alpha = alpha
-
+        self.states = {}
         for i,idx in enumerate(Ns.start_loc):
             self.state_idmax = i
             if self.dom.I[idx[0],idx[1]]:
@@ -128,17 +121,17 @@ class Grid:
         self.Rpub = self.alpha*self.R*I_filter
         self.Rpriv = (1-self.alpha)*self.R*I_filter
 
-        self.satisfaction[np.where(I_filter>0)] = (self.Rpriv - self.Rdem)[np.where(I_filter>0)]
+        self.satisfaction[I_filter] = (self.Rpriv - self.Rdem)[I_filter]
 
-        for id in np.array(np.where(self.satisfaction < -12)).T:
-            self.Idx[id[0],id[1]] = self.state_idmax
-            self.states[self.state_idmax]=State(np.random.rand(3),self.state_idmax,self.alpha)
-            self.state_idmax += 1
+        #Rebellion and colonies
+        #---------------------------------------------------------------------------------------------------------
+        self.Idx[np.where(self.satisfaction < -12)] = self.state_idmax
+        self.states[self.state_idmax]=State(np.random.rand(3),self.state_idmax,self.alpha)
+        self.state_idmax += 1
 
 
         #Demgraphy (Bazykin model) and migration
         #---------------------------------------------------------------------------------------------------------
-
         dist = np.array([[np.sqrt(2),1,np.sqrt(2)],
                          [1,         0,         1],
                          [np.sqrt(2),1,np.sqrt(2)]])*(self.dx)
