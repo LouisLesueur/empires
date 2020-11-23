@@ -3,7 +3,7 @@
 A simulation of human interactions at a large scale, using python numpy and matplotlib.
 It is a simple reaction–diffusion system based on darwinian dynamics.
 
-![](documentation/example.gif)
+![](docs/example.gif)
 
 
 # How does-it work ?

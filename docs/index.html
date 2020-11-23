@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<!--
+==============================================================================
+           "GitHub HTML5 Pandoc Template" v2.2 — by Tristano Ajmone
+==============================================================================
+Copyright © Tristano Ajmone, 2017-2020, MIT License (MIT). Project's home:
+
+- https://github.com/tajmone/pandoc-goodies
+
+The CSS in this template reuses source code taken from the following projects:
+
+- GitHub Markdown CSS: Copyright © Sindre Sorhus, MIT License (MIT):
+  https://github.com/sindresorhus/github-markdown-css
+
+- Primer CSS: Copyright © 2016-2017 GitHub Inc., MIT License (MIT):
+  http://primercss.io/
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The MIT License
+
+Copyright (c) Tristano Ajmone, 2017-2020 (github.com/tajmone/pandoc-goodies)
+Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+Copyright (c) 2017 GitHub Inc.
+
+"GitHub Pandoc HTML5 Template" is Copyright (c) Tristano Ajmone, 2017-2020,
+released under the MIT License (MIT); it contains readaptations of substantial
+portions of the following third party softwares:
+
+(1) "GitHub Markdown CSS", Copyright (c) Sindre Sorhus, MIT License (MIT).
+(2) "Primer CSS", Copyright (c) 2016 GitHub Inc., MIT License (MIT).
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+==============================================================================-->
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Empires documentation</title>
+  <style type="text/css">
+@charset "UTF-8";.markdown-body{-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;color:#24292e;font-family:-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";font-size:16px;line-height:1.5;word-wrap:break-word;box-sizing:border-box;min-width:200px;max-width:980px;margin:0 auto;padding:45px}.markdown-body a{color:#0366d6;background-color:transparent;text-decoration:none;-webkit-text-decoration-skip:objects}.markdown-body a:active,.markdown-body a:hover{outline-width:0}.markdown-body a:hover{text-decoration:underline}.markdown-body a:not([href]){color:inherit;text-decoration:none}.markdown-body strong{font-weight:600}.markdown-body h1,.markdown-body h2,.markdown-body h3,.markdown-body h4,.markdown-body h5,.markdown-body h6{margin-top:24px;margin-bottom:16px;font-weight:600;line-height:1.25}.markdown-body h1{font-size:2em;margin:.67em 0;padding-bottom:.3em;border-bottom:1px solid #eaecef}.markdown-body h2{padding-bottom:.3em;font-size:1.5em;border-bottom:1px solid #eaecef}.markdown-body h3{font-size:1.25em}.markdown-body h4{font-size:1em}.markdown-body h5{font-size:.875em}.markdown-body h6{font-size:.85em;color:#6a737d}.markdown-body img{border-style:none}.markdown-body svg:not(:root){overflow:hidden}.markdown-body hr{box-sizing:content-box;height:.25em;margin:24px 0;padding:0;overflow:hidden;background-color:#e1e4e8;border:0}.markdown-body hr::before{display:table;content:""}.markdown-body hr::after{display:table;clear:both;content:""}.markdown-body input{margin:0;overflow:visible;font:inherit;font-family:inherit;font-size:inherit;line-height:inherit}.markdown-body [type=checkbox]{box-sizing:border-box;padding:0}.markdown-body *{box-sizing:border-box}.markdown-body blockquote{margin:0}.markdown-body ol,.markdown-body ul{padding-left:2em}.markdown-body ol ol,.markdown-body ul ol{list-style-type:lower-roman}.markdown-body ol ol,.markdown-body ol ul,.markdown-body ul ol,.markdown-body ul ul{margin-top:0;margin-bottom:0}.markdown-body ol ol ol,.markdown-body ol ul ol,.markdown-body ul ol ol,.markdown-body ul ul ol{list-style-type:lower-alpha}.markdown-body li>p{margin-top:16px}.markdown-body li+li{margin-top:.25em}.markdown-body dd{margin-left:0}.markdown-body dl{padding:0}.markdown-body dl dt{padding:0;margin-top:16px;font-size:1em;font-style:italic;font-weight:600}.markdown-body dl dd{padding:0 16px;margin-bottom:16px}.markdown-body code{font-family:SFMono-Regular,Consolas,"Liberation Mono",Menlo,Courier,monospace}.markdown-body pre{font:12px SFMono-Regular,Consolas,"Liberation Mono",Menlo,Courier,monospace;word-wrap:normal}.markdown-body blockquote,.markdown-body dl,.markdown-body ol,.markdown-body p,.markdown-body pre,.markdown-body table,.markdown-body ul{margin-top:0;margin-bottom:16px}.markdown-body blockquote{padding:0 1em;color:#6a737d;border-left:.25em solid #dfe2e5}.markdown-body blockquote>:first-child{margin-top:0}.markdown-body blockquote>:last-child{margin-bottom:0}.markdown-body table{display:block;width:100%;overflow:auto;border-spacing:0;border-collapse:collapse}.markdown-body table th{font-weight:600}.markdown-body table td,.markdown-body table th{padding:6px 13px;border:1px solid #dfe2e5}.markdown-body table tr{background-color:#fff;border-top:1px solid #c6cbd1}.markdown-body table tr:nth-child(2n){background-color:#f6f8fa}.markdown-body img{max-width:100%;box-sizing:content-box;background-color:#fff}.markdown-body code{padding:.2em 0;margin:0;font-size:85%;background-color:rgba(27,31,35,.05);border-radius:3px}.markdown-body code::after,.markdown-body code::before{letter-spacing:-.2em;content:" "}.markdown-body pre>code{padding:0;margin:0;font-size:100%;word-break:normal;white-space:pre;background:0 0;border:0}.markdown-body .highlight{margin-bottom:16px}.markdown-body .highlight pre{margin-bottom:0;word-break:normal}.markdown-body .highlight pre,.markdown-body pre{padding:16px;overflow:auto;font-size:85%;line-height:1.45;background-color:#f6f8fa;border-radius:3px}.markdown-body pre code{display:inline;max-width:auto;padding:0;margin:0;overflow:visible;line-height:inherit;word-wrap:normal;background-color:transparent;border:0}.markdown-body pre code::after,.markdown-body pre code::before{content:normal}.markdown-body .full-commit .btn-outline:not(:disabled):hover{color:#005cc5;border-color:#005cc5}.markdown-body kbd{box-shadow:inset 0 -1px 0 #959da5;display:inline-block;padding:3px 5px;font:11px/10px SFMono-Regular,Consolas,"Liberation Mono",Menlo,Courier,monospace;color:#444d56;vertical-align:middle;background-color:#fcfcfc;border:1px solid #c6cbd1;border-bottom-color:#959da5;border-radius:3px;box-shadow:inset 0 -1px 0 #959da5}.markdown-body :checked+.radio-label{position:relative;z-index:1;border-color:#0366d6}.markdown-body .task-list-item{list-style-type:none}.markdown-body .task-list-item+.task-list-item{margin-top:3px}.markdown-body .task-list-item input{margin:0 .2em .25em -1.6em;vertical-align:middle}.markdown-body::before{display:table;content:""}.markdown-body::after{display:table;clear:both;content:""}.markdown-body>:first-child{margin-top:0!important}.markdown-body>:last-child{margin-bottom:0!important}.Alert,.Error,.Note,.Success,.Warning{padding:11px;margin-bottom:24px;border-style:solid;border-width:1px;border-radius:4px}.Alert p,.Error p,.Note p,.Success p,.Warning p{margin-top:0}.Alert p:last-child,.Error p:last-child,.Note p:last-child,.Success p:last-child,.Warning p:last-child{margin-bottom:0}.Alert{color:#246;background-color:#e2eef9;border-color:#bac6d3}.Warning{color:#4c4a42;background-color:#fff9ea;border-color:#dfd8c2}.Error{color:#911;background-color:#fcdede;border-color:#d2b2b2}.Success{color:#22662c;background-color:#e2f9e5;border-color:#bad3be}.Note{color:#2f363d;background-color:#f6f8fa;border-color:#d5d8da}.Alert h1,.Alert h2,.Alert h3,.Alert h4,.Alert h5,.Alert h6{color:#246;margin-bottom:0}.Warning h1,.Warning h2,.Warning h3,.Warning h4,.Warning h5,.Warning h6{color:#4c4a42;margin-bottom:0}.Error h1,.Error h2,.Error h3,.Error h4,.Error h5,.Error h6{color:#911;margin-bottom:0}.Success h1,.Success h2,.Success h3,.Success h4,.Success h5,.Success h6{color:#22662c;margin-bottom:0}.Note h1,.Note h2,.Note h3,.Note h4,.Note h5,.Note h6{color:#2f363d;margin-bottom:0}.Alert h1:first-child,.Alert h2:first-child,.Alert h3:first-child,.Alert h4:first-child,.Alert h5:first-child,.Alert h6:first-child,.Error h1:first-child,.Error h2:first-child,.Error h3:first-child,.Error h4:first-child,.Error h5:first-child,.Error h6:first-child,.Note h1:first-child,.Note h2:first-child,.Note h3:first-child,.Note h4:first-child,.Note h5:first-child,.Note h6:first-child,.Success h1:first-child,.Success h2:first-child,.Success h3:first-child,.Success h4:first-child,.Success h5:first-child,.Success h6:first-child,.Warning h1:first-child,.Warning h2:first-child,.Warning h3:first-child,.Warning h4:first-child,.Warning h5:first-child,.Warning h6:first-child{margin-top:0}h1.title,p.subtitle{text-align:center}h1.title.followed-by-subtitle{margin-bottom:0}p.subtitle{font-size:1.5em;font-weight:600;line-height:1.25;margin-top:0;margin-bottom:16px;padding-bottom:.3em}div.line-block{white-space:pre-line}
+  </style>
+  <style type="text/css">code{white-space: pre;}</style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+   var mathElements = document.getElementsByClassName("math");
+   var macros = [];
+   for (var i = 0; i < mathElements.length; i++) {
+    var texText = mathElements[i].firstChild;
+    if (mathElements[i].tagName == "SPAN") {
+     katex.render(texText.data, mathElements[i], {
+      displayMode: mathElements[i].classList.contains('display'),
+      throwOnError: false,
+      macros: macros,
+      fleqn: false
+     });
+  }}});
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<article class="markdown-body">
+<header>
+<h1 class="title">Empires documentation</h1>
+</header>
+<h1 id="introduction-real-modeling-or-just-making-equations">Introduction: real modeling or just making equations ?</h1>
+<p>Clyodynamics is a research field essentially carried by Peter Turchin. Its goal is to bring mathematical modelisation into history research. The most complete and detailed presentation of Turchin theory is probably in his book <em>Historical Dynamics: Why States Rise and Fall</em><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. Turchin seems to find interesting results, and especially his ‘secular cycles’. Today, cliodynamics is still a new and growing field of research. But is Turchin analysis relevent ?</p>
+<p>As recently underlined by A.Maini <a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>, Turchin models suffer from a lack of strong theoretical background. Especially all the logistic growth models used in its population dynamics equations relies on many parameters that are just impossible to estimate. And this is mostly due to the fact that population dynamics is not a fully rigorous theory, as many of the equations used in biology are built to fit with the observation and not from general principles.</p>
+<p>Despite these observations, cliodynamics stays a very interesting field, and equations modelling population evolution are not its only elements. But it is important to stay rigorous and to not get carried away by results that just seems to be right.</p>
+<p>For all those reasons, the model presented in this paper, even if a part of it relies on scientific papers, need to be seen only as a toy model without any pretention.</p>
+<figure>
+<img src="example.gif" alt="Example of simulation" /><figcaption aria-hidden="true">Example of simulation</figcaption>
+</figure>
+<h1 id="space-partition">Space partition</h1>
+<h2 id="basic-entities">Basic entities</h2>
+<ul>
+<li>The full domain (map) of the simulation is noted <span class="math inline">\Omega</span>. It is divided between water <span class="math inline">\mathcal{W}</span> and land <span class="math inline">\mathcal{L}</span>.</li>
+<li>The resource function <span class="math inline">R(x,y,t)</span> is defined on <span class="math inline">\mathcal{L}</span> and represents the spatial repartition of resources on the map over time.</li>
+<li>A city is a point <span class="math inline">c \in \mathcal{L}</span>. It has a zone of influence <span class="math inline">I(c)</span>, centered around it, in which it can collect resources. For a given map, the set of cities is notes <span class="math inline">\mathcal{C}(\Omega)</span></li>
+<li>The population function <span class="math inline">N(c)</span> is defined on <span class="math inline">\mathcal{C}</span> and represents the population of each city.</li>
+</ul>
+<h2 id="politic-entities">Politic entities</h2>
+<ul>
+<li>A city policy is axed on three possible actions:
+<ul>
+<li>build a ‘road’ and a colony <span class="math inline">c&#39;</span> in its expansion area <span class="math inline">E(c)</span>.</li>
+<li>disappear (because of war or collapse, see next sections)</li>
+<li>build a ‘road’ to another city</li>
+</ul></li>
+<li>A state is a connected graph of cities, linked by roads. It evolves over time, starting by one unique city (called a city-state) which can found colonies or conquer other states cities to expand. A state policy is defined by:
+<ul>
+<li>Collecting taxes</li>
+<li>Spending public money in various domains</li>
+<li>Defining its attitude (ie the attitude of its cities) towards other states</li>
+</ul></li>
+</ul>
+<h1 id="demography">Demography</h1>
+<p>The evolution of population, public resource (<span class="math inline">R_p</span>) and resources of a city <span class="math inline">c</span> is driven by a generalized prey-predator equation of the type:</p>
+<p><span class="math display">
+\left\{
+    \begin{array}{ll}
+        \frac{dN}{dt} = \chi f(N,R) - \delta(N)N &amp; \text{on } c\\
+        \frac{dR_p}{dt} = \alpha(r(R)R - f(N,R)) &amp; \text{on } c \\
+        \frac{dR}{dt} = (1-\alpha)(r(R)R - f(N,R)) &amp; \text{on } I(c)
+    \end{array}
+\right.
+</span></p>
+<p>On the rest of land, resources evolve according to <span class="math inline">\frac{dR}{dt} = r(R)R</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">r</span> is the resource growth in the absence of predators</li>
+<li><span class="math inline">\delta</span> is the population decline in the absence of resource</li>
+<li><span class="math inline">f</span> is the population functional response (consumption function)</li>
+<li><span class="math inline">\chi</span> is the conversion rate of resources into people</li>
+<li><span class="math inline">\alpha</span> is the taxation rate</li>
+</ul>
+<p>Several population dynamics models can be found in Turchin book on population dynmaics<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>. For the moment only the one called Bazykin model by Turchin is implemented, but others will be added in the future.</p>
+<p>All the parameters of the system are defined on the domain (ie depends on the position of the city), in function of a ‘resource map’ and the topograhic map which are needed in the code input.</p>
+<h1 id="expansion">Expansion</h1>
+<p>In the first versions of the code, migration was simulated by directly adding a migration term in the eqation. Even if this kind of modelization is well documented<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>, it was abandonned. Indeed, classical migration terms are taken from diffusion equations. If for animal migration it can have an interest, it is not adapted to model human behaviour, and in particular the capacity of humans to group in a city which can exploit a large amount of land to feed its inhabitants. Adopting the city model is also better to properly define states and policies.</p>
+<p>So, for a given city <span class="math inline">c</span>, at each time step, a random point in <span class="math inline">e(c)</span> is sampled. Then, the probabilty to establish a colony on this point is computed, and if it is superior to a given threshold (which is decided by the state as a policy), the new colony is founded. For the moment, evry probabilistic step is uniform and a city is always founded. But this will change in the future.</p>
+<h1 id="politics">Politics</h1>
+<h3 id="state-evolution">State evolution</h3>
+<p>At <span class="math inline">t=0</span>, the map is composed of city-states. At each time step, they can expand by creating colonies according to the rules mentionned above. An initial city-states and all its descendents form the state.</p>
+<h3 id="migration-and-trade">Migration and trade</h3>
+<p>Inside a state, migrating and sending resources from a city to another is possible. Proper rules to compute the probability to do this need to be established.</p>
+<h3 id="rebellion">Rebellion</h3>
+<p>The satisfaction of population is defined on cities as: <span class="math display">
+S(c) = R(I(c)) - R_m
+</span> where <span class="math inline">R_m</span> is the minimal resources needed by the city population to ‘be happy’. When <span class="math inline">S(c) &lt;0</span>, <span class="math inline">c</span> goes into rebellion and becomes a new city-state which forms the basis of a new state.</p>
+<h3 id="war-and-peace">War and peace</h3>
+<p>When a state discovers the existence of another states (which happens when cities are trying to expand onto the other state’s land), it can do several actions: + Attack (in this case, the state with higher military budget has a higher probabilty to win) + Become ally and build a road to allow migrations and trade.</p>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>Turchin, Peter. Historical Dynamics: Why States Rise and Fall: Why States Rise and Fall. Princeton University Press, 2003. JSTOR, www.jstor.org/stable/j.ctt1wf4d45. Accessed 23 Nov. 2020.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>Maini, A. On Historical Dynamics by P. Turchin. Biophys Econ Sust 5, 3 (2020). https://doi.org/10.1007/s41247-019-0063-x<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3" role="doc-endnote"><p>Turchin, P.B.. (2003). Complex population dynamics: A theoretical/empirical synthesis. 10.1515/9781400847280.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4" role="doc-endnote"><p>Cui, Shangbin &amp; Bai, Meng. (2014). Mathematical analysis of population migration and its effects to spread of epidemics. Discrete and Continuous Dynamical Systems - Series B. 20. 10.3934/dcdsb.2015.20.2819.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+</article>
+</body>
+</html>

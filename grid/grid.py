@@ -84,7 +84,7 @@ class Grid:
 
         self.satisfaction = (self.R - self.Ns.Rdem)
 
-        # Demography (Bazykin model + migrations)
+        # Demography (Bazykin model)
         # ---------------------------------------------------------------------
 
         death = - self.Ns.n0
@@ -105,17 +105,21 @@ class Grid:
 
         for i,city in enumerate(new_cities_pos):
             if (0 <city[0] < self.dom.I.shape[0]) and (0 <city[1] < self.dom.I.shape[1]):
+
+                id = [np.maximum(0,city[0]-self.expend),np.minimum(self.dom.I.shape[0],city[0]+self.expend),
+                      np.maximum(0,city[1]-self.expend),np.minimum(self.dom.I.shape[1],city[1]+self.expend)]
+
                 if self.Idx[city[0], city[1]] == -1:
-                    self.pos = np.append(self.pos, [city], axis=0)
-                    self.N = np.append(self.N, self.Ns.Nstart)
-                    self.R = np.append(self.R, self.Rmax[city[0], city[1]])
-                    self.neig[i].append(oldlen+i)
-                    self.neig.append([oldlen+i])
+                    if np.random.rand() > 0.65:
+                        self.pos = np.append(self.pos, [city], axis=0)
+                        self.N = np.append(self.N, self.Ns.Nstart)
+                        self.R = np.append(self.R, self.Rmax[city[0], city[1]])
+                        self.neig[i].append(oldlen+i)
+                        self.neig.append([oldlen+i])
 
-                    id = [np.maximum(0,city[0]-self.expend),np.minimum(self.dom.I.shape[0],city[0]+self.expend),
-                          np.maximum(0,city[1]-self.expend),np.minimum(self.dom.I.shape[1],city[1]+self.expend)]
-
-                    self.citiesIdx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = oldlen+i
+                        self.citiesIdx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = oldlen+i
+                    else:
+                        self.citiesIdx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = i
                     self.Idx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = self.states[int(self.Idx[self.pos[i,0],self.pos[i,1]])]
                     # self.Idx[city[0],city[1]] = self.states[int(self.Idx[self.pos[i,0],self.pos[i,1]])]
 
