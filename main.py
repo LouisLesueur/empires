@@ -12,7 +12,7 @@ scale = 1
 lenN = 100
 
 dt = 0.01
-dx = 10 #km
+dx = 500 #km
 
 Europe = Domain('maps/europe')
 
@@ -68,5 +68,5 @@ def animate(i):
 
 writer = PillowWriter(fps=15)
 anim = FuncAnimation(fig, animate, frames = niter, blit=False, interval = 100)
-anim.save('out.gif', writer=writer)
+#anim.save('out.gif', writer=writer)
 plt.show()

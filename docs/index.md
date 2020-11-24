@@ -67,7 +67,7 @@ All the parameters of the system are defined on the domain (ie depends on the po
 
 In the first versions of the code, migration was simulated by directly adding a migration term in the eqation. Even if this kind of modelization is well documented[^4], it was abandonned. Indeed, classical migration terms are taken from diffusion equations. If for animal migration it can have an interest, it is not adapted to model human behaviour, and in particular the capacity of humans to group in a city which can exploit a large amount of land to feed its inhabitants. Adopting the city model is also better to properly define states and policies.
 
-So, for a given city $c$, at each time step, a random point in $e(c)$ is sampled. Then, the probabilty to establish a colony on this point is computed, and if it is superior to a given threshold (which is decided by the state as a policy), the new colony is founded. For the moment, evry probabilistic step is uniform and a city is always founded. But this will change in the future.
+So, for a given city $c$, at each time step, a random point in $e(c)$ is sampled. Then, the probabilty to establish a colony on this point is computed, and if it is superior to a given threshold (which is decided by the state as a policy), the new colony is founded. Else, the city can either keep the land to gather its resources, either leave it. For the moment, evry probabilistic step is uniform and a city is always founded. But this will change in the future.
 
 # Politics
 
