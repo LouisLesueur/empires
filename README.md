@@ -8,4 +8,12 @@ It is a simple reaction–diffusion system based on darwinian dynamics.
 
 # How does-it work ?
 
-Documentation will be updated as soon as possible
+Documentation (still in construction) is accessible [here](https://louislesueur.github.io/empires/)
+
+# To-do
+
+- [ ] draw roads properly (geodesics ?)
+- [ ] find rules for migration and trade
+- [ ] tune parameters
+- [ ] add war and peace in the code
+- [ ] add reinforcement learning to allow states to find policies
