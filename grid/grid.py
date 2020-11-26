@@ -7,6 +7,7 @@ This module combines domain, pops and resources to make the simulation
 import numpy as np
 from grid.mathutils import lap, compute_bound, bound_lap
 
+
 class Grid:
     """The grid class"""
 
@@ -40,6 +41,7 @@ class Grid:
 
         self.N = np.array(N_start, dtype=np.float64)
         self.pos = np.array(start_pos)
+        self.city_pos = np.array(start_pos)
         self.neig = []
         for i in range(len(self.N)):
             self.neig.append([i])
@@ -88,7 +90,7 @@ class Grid:
         # ---------------------------------------------------------------------
 
         death = - self.Ns.n0
-        limit = - (self.N/self.Nmax[self.pos.T[0], self.pos.T[1]])
+        limit = - (self.N/self.Nmax[self.city_pos.T[0], self.city_pos.T[1]])
         G = death+limit
 
         dN = (G*self.N + self.Ns.chi * self.conso)*self.dt
@@ -98,10 +100,9 @@ class Grid:
         # ---------------------------------------------------------------------
 
         new_cities_pos = self.pos + np.random.randint(-2*self.expend, 2*self.expend,
-                                                      (len(self.N), 2))
+                                                      (len(self.pos), 2))
 
-
-        oldlen = len(self.N)
+        oldlen = len(self.city_pos)
 
         for i,city in enumerate(new_cities_pos):
             if (0 <city[0] < self.dom.I.shape[0]) and (0 <city[1] < self.dom.I.shape[1]):
@@ -109,19 +110,22 @@ class Grid:
                 id = [np.maximum(0,city[0]-self.expend),np.minimum(self.dom.I.shape[0],city[0]+self.expend),
                       np.maximum(0,city[1]-self.expend),np.minimum(self.dom.I.shape[1],city[1]+self.expend)]
 
+                city_idx = int(self.citiesIdx[self.pos[i,0],self.pos[i,1]])
+                state_idx = int(self.Idx[self.pos[i,0],self.pos[i,1]])
+
                 if self.Idx[city[0], city[1]] == -1:
-                    if np.random.rand() > 0.65:
-                        self.pos = np.append(self.pos, [city], axis=0)
+                    self.pos = np.append(self.pos, [city], axis=0)
+                    # if np.random.rand() > 1 - np.exp(-((self.R[city_idx]*np.log(2))/(self.Ns.Rdem))):
+                    if np.random.rand() > 1-0.2:
+                        self.city_pos = np.append(self.city_pos, [city], axis=0)
                         self.N = np.append(self.N, self.Ns.Nstart)
                         self.R = np.append(self.R, self.Rmax[city[0], city[1]])
-                        self.neig[i].append(oldlen+i)
-                        self.neig.append([oldlen+i])
-
-                        self.citiesIdx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = oldlen+i
+                        self.neig[city_idx].append(oldlen)
+                        self.neig.append([oldlen])
+                        self.citiesIdx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = oldlen
                     else:
-                        self.citiesIdx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = i
-                    self.Idx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = self.states[int(self.Idx[self.pos[i,0],self.pos[i,1]])]
-                    # self.Idx[city[0],city[1]] = self.states[int(self.Idx[self.pos[i,0],self.pos[i,1]])]
+                        self.citiesIdx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = city_idx
+                    self.Idx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = state_idx
 
         # for _ in range(self.expend):
         #     self.Idx, conflicts = bound_lap(self.Idx)
@@ -143,9 +147,9 @@ class Grid:
 
         bound = compute_bound(self.citiesIdx)[0]
         out[np.where(bound == 1)] = np.array([0,0,0])
-        out[self.pos.T[0], self.pos.T[1]] = np.array([1,0,0])
+        out[self.city_pos.T[0], self.city_pos.T[1]] = np.array([1,0,0])
 
 
         return (out*255).astype(np.uint8)
         #return self.satisfaction<-12
-        #return self.Idx
+        #return self.citiesIdx
