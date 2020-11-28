@@ -83,7 +83,6 @@ class Grid:
         for i in range(len(self.Rcity)):
             self.Rcity[i] = np.sum(self.R[self.citiesIdx == i])
         self.Rcity -= self.conso*self.dt
-        print(self.satisfaction)
 
 
         # Taxes
