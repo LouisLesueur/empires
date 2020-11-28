@@ -118,14 +118,27 @@ class Grid:
                 colony = startpos + np.random.randint(-1, 2, 2)*self.expend
                 if (0 <colony[0] < self.dom.I.shape[0]) and (0 <colony[1] < self.dom.I.shape[1]):
                     if self.Idx[colony[0], colony[1]] == -1:
-                        self.city_pos = np.append(self.city_pos, [colony], axis=0)
-                        self.N = np.append(self.N, self.Ns.Nstart)
-                        self.R = np.append(self.R, self.Rmax[colony[0], colony[1]])
-                        self.neig[city_idx].append(oldlen)
-                        self.neig.append([oldlen, city_idx])
-                        self.citiesIdx[colony[0], colony[1]] = oldlen
-                        self.Idx[colony[0], colony[1]] = state_idx
-                        self.canExplore[colony[0], colony[1]] = True
+                        d = self.dom.dist(startpos, colony)
+                        roadpos = np.array([(startpos*(j/d) + colony*(1-(j/d))).astype(np.int32) for j in range(int(d))])
+                        roadidx = np.array([self.Idx[rp[0], rp[1]] for rp in roadpos])
+                        if not(len(roadidx[roadidx > 0])>0):
+                            for j,rp in enumerate(roadpos):
+                                if self.Idx[rp[0], rp[1]] == -1:
+                                    if j < int(d)//2:
+                                        self.citiesIdx[rp[0], rp[1]] = oldlen
+                                    else:
+                                        self.citiesIdx[rp[0], rp[1]] = city_idx
+                                    self.canExplore[rp[0], rp[1]] = True
+                                    self.Idx[rp[0], rp[1]] = state_idx
+
+                            self.city_pos = np.append(self.city_pos, [colony], axis=0)
+                            self.N = np.append(self.N, self.Ns.Nstart)
+                            self.R = np.append(self.R, self.Rmax[colony[0], colony[1]])
+                            self.neig[city_idx].append(oldlen)
+                            self.neig.append([oldlen, city_idx])
+                            self.citiesIdx[colony[0], colony[1]] = oldlen
+                            self.Idx[colony[0], colony[1]] = state_idx
+                            self.canExplore[colony[0], colony[1]] = True
 
             for id in range(-1,2):
                 for jd in range(-1,2):
@@ -157,4 +170,4 @@ class Grid:
 
         return (out*255).astype(np.uint8)
         #return self.satisfaction<-12
-        #return self.canExplore
+        #return self.citiesIdx

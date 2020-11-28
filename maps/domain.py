@@ -36,6 +36,9 @@ class Domain:
         self.area = np.sum(self.I)*(self.dx**2)
         self.shape = self.I.shape
 
+    def dist(self, p1, p2):
+        return np.linalg.norm(p1-p2)
+
 class Res:
     """Resources class"""
     def __init__(self, r0, Rmax):
