@@ -7,7 +7,7 @@ from matplotlib.animation import FuncAnimation, PillowWriter
 from PIL import Image
 
 
-niter = 150
+niter = 200
 scale = 1
 lenN = 100
 
@@ -46,14 +46,15 @@ sim = Grid(Nstart,
            R,
            Europe,
            0.01, #alpha -- production taxation (%.year^-1)
-           10, #range
+           50, #range
            dt)
 
 fig, ax = plt.subplots()
-plt.axis('off')
+#plt.axis('off')
 
 
 im=plt.imshow(sim.get_img())
+scat = plt.scatter(sim.city_pos.T[1], sim.city_pos.T[0], s=1)
 ax.set_title(f'Year: 0')
 
 
@@ -62,11 +63,12 @@ def animate(i):
         sim.update()
     im.set_array(sim.get_img())
     ax.set_title(f'Year: {i*scale*dt}, {len(sim.states)} states, {len(sim.N)} cities')
+    scat.set_offsets(np.c_[sim.city_pos.T[1], sim.city_pos.T[0]])
 
     print(f"step {i}\r", sep=' ', end='', flush=True)
     return [im]
 
 writer = PillowWriter(fps=15)
 anim = FuncAnimation(fig, animate, frames = niter, blit=False, interval = 100)
-#anim.save('out.gif', writer=writer)
+anim.save('out.gif', writer=writer)
 plt.show()

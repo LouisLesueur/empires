@@ -30,31 +30,38 @@ class Grid:
 
         self.Ns = Ns
         self.Rs = Rs
-        self.alpha = alpha
-        self.expend = int(expend/self.dx)
 
         self.r0 = Rs.r0*self.dom.I_topo*self.dom.I
         self.Rmax = Rs.Rmax*self.dom.I_topo
         self.Nmax = Ns.Nmax*self.dom.I_topo
+
+        self.alpha = alpha
+        self.expend = int(expend/self.dx)
+        self.N = np.array(N_start, dtype=np.float64)
+
         self.citiesIdx = np.zeros_like(self.dom.I)-1
         self.Idx = np.zeros_like(self.dom.I)-1
+        self.canExplore = np.zeros_like(self.dom.I, dtype=np.bool)
 
-        self.N = np.array(N_start, dtype=np.float64)
-        self.pos = np.array(start_pos)
         self.city_pos = np.array(start_pos)
+
         self.neig = []
         for i in range(len(self.N)):
             self.neig.append([i])
 
-            id = [np.maximum(0,self.pos[i,0]-self.expend),np.minimum(self.dom.I.shape[0],self.pos[i,0]+self.expend),
-                  np.maximum(0,self.pos[i,1]-self.expend),np.minimum(self.dom.I.shape[1],self.pos[i,1]+self.expend)]
+            # id = [np.maximum(0,self.sites_pos[i,0]-self.expend),np.minimum(self.dom.I.shape[0],self.sites_pos[i,0]+self.expend),
+            #       np.maximum(0,self.sites_pos[i,1]-self.expend),np.minimum(self.dom.I.shape[1],self.sites_pos[i,1]+self.expend)]
+            #
+            # self.citiesIdx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = i
+            # self.Idx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = i
 
-            self.citiesIdx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = i
-            self.Idx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = i
+            self.citiesIdx[self.city_pos[i,0], self.city_pos[i,1]] = i
+            self.canExplore[self.city_pos[i,0], self.city_pos[i,1]] = True
+            self.Idx[self.city_pos[i,0], self.city_pos[i,1]] = i
 
         self.Idx[self.dom.I == 0] = -3
 
-        self.R = self.Rmax[self.pos.T[0], self.pos.T[1]]
+        self.R = self.Rmax[self.city_pos.T[0], self.city_pos.T[1]]
         self.Rpub = np.zeros_like(self.N)
         self.states = np.arange(len(self.N))
         self.colors = np.random.rand(len(self.states),3)
@@ -99,37 +106,36 @@ class Grid:
         # Expension
         # ---------------------------------------------------------------------
 
-        new_cities_pos = self.pos + np.random.randint(-2*self.expend, 2*self.expend,
-                                                      (len(self.pos), 2))
-
+        canstart = np.array(np.where(self.canExplore)).T
+        start = canstart[np.random.randint(0,len(canstart), np.random.randint(0,len(canstart)))]
         oldlen = len(self.city_pos)
 
-        for i,city in enumerate(new_cities_pos):
-            if (0 <city[0] < self.dom.I.shape[0]) and (0 <city[1] < self.dom.I.shape[1]):
+        for i, startpos in enumerate(start):
+            city_idx = int(self.citiesIdx[startpos[0], startpos[1]])
+            state_idx = int(self.Idx[startpos[0], startpos[1]])
 
-                id = [np.maximum(0,city[0]-self.expend),np.minimum(self.dom.I.shape[0],city[0]+self.expend),
-                      np.maximum(0,city[1]-self.expend),np.minimum(self.dom.I.shape[1],city[1]+self.expend)]
-
-                city_idx = int(self.citiesIdx[self.pos[i,0],self.pos[i,1]])
-                state_idx = int(self.Idx[self.pos[i,0],self.pos[i,1]])
-
-                if self.Idx[city[0], city[1]] == -1:
-                    self.pos = np.append(self.pos, [city], axis=0)
-                    # if np.random.rand() > 1 - np.exp(-((self.R[city_idx]*np.log(2))/(self.Ns.Rdem))):
-                    if np.random.rand() > 1-0.2:
-                        self.city_pos = np.append(self.city_pos, [city], axis=0)
+            if np.random.rand() > 1-0.005:
+                colony = startpos + np.random.randint(-1, 2, 2)*self.expend
+                if (0 <colony[0] < self.dom.I.shape[0]) and (0 <colony[1] < self.dom.I.shape[1]):
+                    if self.Idx[colony[0], colony[1]] == -1:
+                        self.city_pos = np.append(self.city_pos, [colony], axis=0)
                         self.N = np.append(self.N, self.Ns.Nstart)
-                        self.R = np.append(self.R, self.Rmax[city[0], city[1]])
+                        self.R = np.append(self.R, self.Rmax[colony[0], colony[1]])
                         self.neig[city_idx].append(oldlen)
-                        self.neig.append([oldlen])
-                        self.citiesIdx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = oldlen
-                    else:
-                        self.citiesIdx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = city_idx
-                    self.Idx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = state_idx
+                        self.neig.append([oldlen, city_idx])
+                        self.citiesIdx[colony[0], colony[1]] = oldlen
+                        self.Idx[colony[0], colony[1]] = state_idx
+                        self.canExplore[colony[0], colony[1]] = True
 
-        # for _ in range(self.expend):
-        #     self.Idx, conflicts = bound_lap(self.Idx)
-        self.Idx[self.dom.I == 0] = -3
+            for id in range(-1,2):
+                for jd in range(-1,2):
+                    newpos = startpos + np.array([id,jd])
+                    if (0 <newpos[0] < self.dom.I.shape[0]) and (0 <newpos[1] < self.dom.I.shape[1]):
+                        if self.Idx[newpos[0], newpos[1]] == -1:
+                            self.citiesIdx[newpos[0], newpos[1]] = city_idx
+                            self.canExplore[newpos[0], newpos[1]] = True
+                            self.Idx[newpos[0], newpos[1]] = state_idx
+            self.canExplore[startpos[0], startpos[1]] = False
 
 
     def get_img(self):
@@ -147,9 +153,8 @@ class Grid:
 
         bound = compute_bound(self.citiesIdx)[0]
         out[np.where(bound == 1)] = np.array([0,0,0])
-        out[self.city_pos.T[0], self.city_pos.T[1]] = np.array([1,0,0])
 
 
         return (out*255).astype(np.uint8)
         #return self.satisfaction<-12
-        #return self.citiesIdx
+        #return self.canExplore
