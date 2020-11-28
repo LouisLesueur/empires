@@ -4,6 +4,7 @@ from grid.grid import Grid
 from maps.domain import Domain, Pop, Res
 
 from matplotlib.animation import FuncAnimation, PillowWriter
+from matplotlib.collections import LineCollection
 from PIL import Image
 
 
@@ -70,5 +71,5 @@ def animate(i):
 
 writer = PillowWriter(fps=15)
 anim = FuncAnimation(fig, animate, frames = niter, blit=False, interval = 100)
-anim.save('out.gif', writer=writer)
+#anim.save('out.gif', writer=writer)
 plt.show()

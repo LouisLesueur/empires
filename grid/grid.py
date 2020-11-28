@@ -34,6 +34,7 @@ class Grid:
         self.r0 = Rs.r0*self.dom.I_topo*self.dom.I
         self.Rmax = Rs.Rmax*self.dom.I_topo
         self.Nmax = Ns.Nmax*self.dom.I_topo
+        self.R = self.Rmax/2
 
         self.alpha = alpha
         self.expend = int(expend/self.dx)
@@ -45,15 +46,8 @@ class Grid:
 
         self.city_pos = np.array(start_pos)
 
-        self.neig = []
+        self.roads = []
         for i in range(len(self.N)):
-            self.neig.append([i])
-
-            # id = [np.maximum(0,self.sites_pos[i,0]-self.expend),np.minimum(self.dom.I.shape[0],self.sites_pos[i,0]+self.expend),
-            #       np.maximum(0,self.sites_pos[i,1]-self.expend),np.minimum(self.dom.I.shape[1],self.sites_pos[i,1]+self.expend)]
-            #
-            # self.citiesIdx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = i
-            # self.Idx[id[0]:id[1], id[2]:id[3]][self.Idx[id[0]:id[1], id[2]:id[3]]==-1] = i
 
             self.citiesIdx[self.city_pos[i,0], self.city_pos[i,1]] = i
             self.canExplore[self.city_pos[i,0], self.city_pos[i,1]] = True
@@ -61,7 +55,7 @@ class Grid:
 
         self.Idx[self.dom.I == 0] = -3
 
-        self.R = self.Rmax[self.city_pos.T[0], self.city_pos.T[1]]
+        self.Rcity = self.Rmax[self.city_pos.T[0], self.city_pos.T[1]]
         self.Rpub = np.zeros_like(self.N)
         self.states = np.arange(len(self.N))
         self.colors = np.random.rand(len(self.states),3)
@@ -75,16 +69,22 @@ class Grid:
 
         # Consumption
         # ---------------------------------------------------------------------
-        self.conso = self.Ns.c0*(self.R/(self.Ns.Rdem + self.R))*self.N
-        self.satisfaction = (self.R - self.Ns.Rdem)
+        self.conso = self.Ns.c0*(self.Rcity/(self.Ns.Rdem + self.Rcity))*self.N
+        self.satisfaction = (self.Rcity - self.Ns.Rdem)
 
         # Renewal
         # ---------------------------------------------------------------------
-        renew = self.Rs.r0
-        limit = -self.Rs.r0*(self.R/self.Rs.Rmax)
+        renew = self.r0
+        limit = -self.r0*(self.R/(self.Rmax))
 
-        dR = (renew+limit)*self.R-self.conso
+        dR = (renew+limit)*self.R
         self.R += dR*self.dt
+
+        for i in range(len(self.Rcity)):
+            self.Rcity[i] = np.sum(self.R[self.citiesIdx == i])
+        self.Rcity -= self.conso*self.dt
+        print(self.satisfaction)
+
 
         # Taxes
         # ---------------------------------------------------------------------
@@ -133,9 +133,8 @@ class Grid:
 
                             self.city_pos = np.append(self.city_pos, [colony], axis=0)
                             self.N = np.append(self.N, self.Ns.Nstart)
-                            self.R = np.append(self.R, self.Rmax[colony[0], colony[1]])
-                            self.neig[city_idx].append(oldlen)
-                            self.neig.append([oldlen, city_idx])
+                            self.Rcity = np.append(self.Rcity, self.R[colony[0], colony[1]])
+                            self.roads.append([city_idx, oldlen])
                             self.citiesIdx[colony[0], colony[1]] = oldlen
                             self.Idx[colony[0], colony[1]] = state_idx
                             self.canExplore[colony[0], colony[1]] = True
