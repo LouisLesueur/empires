@@ -42,6 +42,9 @@ class Simulation:
         for i,reg in enumerate(self.regions.states.owned_regions):
             out[np.where(self.regions.map==i)] = self.regions.states.colors[int(reg)]
 
+        bound = compute_bound(self.regions.map)[0]
+        out[np.where(bound == 1)] = np.array([0,0,0])
+
         return (out*255).astype(np.uint8)
 
     def get_roads(self):

@@ -24,13 +24,10 @@ class Domain:
 
         # Reading all the images
         self.I = plt.imread(name+'/bound.png')
-        self.I_topo = (1-plt.imread(name+'/topo.png'))
-        terrain = (plt.imread(name+'/terrain.png')*255).astype(np.uint8)
+        self.I_topo = plt.imread(name+'/topo.png')
 
         # Building the ressource base regeneration map
-        self.I_r = np.zeros(self.I.shape)
-        for t in specs["terrain"]:
-            self.I_r[np.where(np.all(terrain == np.array(t["color"]), axis=-1))] = t["prosperity"]
+        self.I_r = (1-self.I_topo)*self.I
 
         self.dx = specs["dx"] #km
         self.area = np.sum(self.I)*(self.dx**2)
@@ -50,7 +47,7 @@ class Domain:
 
 class States:
 
-    def __init__(self, domain, max, max_reg, alpha):
+    def __init__(self, domain, max, max_reg, alpha, expend):
 
         self.number = 0
 
@@ -64,7 +61,7 @@ class States:
         self.relations = np.zeros((max,max))-1
         self.owned_regions = np.zeros((max_reg))-1
 
-        self.expend = 50
+        self.expend = int(expend//self.dom.dx)
 
         self.colors = np.random.rand(max,3)
 
@@ -104,6 +101,7 @@ class Regions:
         self.r = np.zeros(self.max)
         self.area = np.zeros(self.max)
         self.stab = 1000+np.zeros(self.max)
+
 
     def update(self, c0, chi, n0, Rm, dt):
         resMax = self.area*100 + 1e-6
@@ -152,6 +150,8 @@ class Regions:
 
         id_to = self.number
 
+        #coords_from = self.cities[id_from]
+
         dist = int(self.states.dom.dist(coords_from, coords_to))
         path = np.array([coords_from*(i/dist)+coords_to*(1-(i/dist)) for i in range(dist)], dtype=np.int32)
         pathidx = np.array([self.map[rp[0], rp[1]] for rp in path])
@@ -159,7 +159,7 @@ class Regions:
         if not(len(pathidx[pathidx > 0])>0):
             for i,p in enumerate(path):
                 if self.map[p[0], p[1]] == -1:
-                    if i < len(path)//2:
+                    if i >= len(path)//2:
                         self.map[p[0], p[1]] = id_from
                         self.r[id_from] += self.states.dom.I_r[p[0], p[1]]
                         self.area[id_from] += 1
@@ -167,7 +167,7 @@ class Regions:
                         self.map[p[0], p[1]] = id_to
                         self.r[id_to] += self.states.dom.I_r[p[0], p[1]]
                         self.area[id_to] += 1
-                    self.canExplore[p[0], p[1]] = id_from
+                    self.canExplore[p[0], p[1]] = True
 
             self.roads[id_from, id_to] = 1
             self.roads[id_to, id_from] = 1
@@ -182,13 +182,14 @@ class Regions:
 
 
     def grow(self):
+
         canstart = np.array(np.where(self.canExplore)).T
         start = canstart[np.random.randint(0,len(canstart), np.random.randint(0,len(canstart)))]
 
         for i, startpos in enumerate(start):
             city_idx = int(self.map[startpos[0], startpos[1]])
 
-            if np.random.rand() > 1-0.005:
+            if np.random.rand() > 1-0.009:
                 go_to = startpos + np.random.randint(-1, 2, 2)*self.states.expend
                 if self.states.dom.exists(go_to):
                     if self.map[go_to[0], go_to[1]] == -1:
