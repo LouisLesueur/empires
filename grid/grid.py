@@ -42,9 +42,13 @@ class Simulation:
         for i,reg in enumerate(self.regions.states.owned_regions):
             out[np.where(self.regions.map==i)] = self.regions.states.colors[int(reg)]
 
-
-        bound = compute_bound(self.regions.map)[0]
-        out[np.where(bound == 1)] = np.array([0,0,0])
-
-
         return (out*255).astype(np.uint8)
+
+    def get_roads(self):
+        lines = []
+        for i in range(self.regions.max):
+            for j in range(i,self.regions.max):
+                if self.regions.roads[i,j] == 1:
+                    lines.append([(self.regions.cities[i][1], self.regions.cities[i][0]),
+                                  (self.regions.cities[j][1], self.regions.cities[j][0])])
+        return lines

@@ -128,7 +128,6 @@ class Regions:
         self.pop += dN
 
 
-
     def add_city_state(self, pos, init_pop, init_res):
 
         if self.states.dom.exists(pos):
@@ -146,39 +145,40 @@ class Regions:
         return False
 
 
-    def colonize(self, id_from, coords_to):
+    def colonize(self, coords_from, id_from, coords_to):
 
         if self.number > self.max:
             return
 
         id_to = self.number
-        coords_from = self.cities[id_from]
 
         dist = int(self.states.dom.dist(coords_from, coords_to))
+        path = np.array([coords_from*(i/dist)+coords_to*(1-(i/dist)) for i in range(dist)], dtype=np.int32)
+        pathidx = np.array([self.map[rp[0], rp[1]] for rp in path])
 
-        path = np.array([coords_from*(1-(i/dist))+coords_to*(i/dist) for i in range(dist)], dtype=np.int32)
-        for i,p in enumerate(path):
-            if self.map[p[0], p[1]] == -1:
-                if i < len(path)//2:
-                    self.map[p[0], p[1]] = id_from
-                    self.r[id_from] += self.states.dom.I_r[p[0], p[1]]
-                    self.area[id_from] += 1
-                else:
-                    self.map[p[0], p[1]] = id_to
-                    self.r[id_to] += self.states.dom.I_r[p[0], p[1]]
-                    self.area[id_to] += 1
-                self.canExplore[p[0], p[1]] = id_from
+        if not(len(pathidx[pathidx > 0])>0):
+            for i,p in enumerate(path):
+                if self.map[p[0], p[1]] == -1:
+                    if i < len(path)//2:
+                        self.map[p[0], p[1]] = id_from
+                        self.r[id_from] += self.states.dom.I_r[p[0], p[1]]
+                        self.area[id_from] += 1
+                    else:
+                        self.map[p[0], p[1]] = id_to
+                        self.r[id_to] += self.states.dom.I_r[p[0], p[1]]
+                        self.area[id_to] += 1
+                    self.canExplore[p[0], p[1]] = id_from
 
-        self.roads[id_from, id_to] = 1
-        self.roads[id_to, id_from] = 1
+            self.roads[id_from, id_to] = 1
+            self.roads[id_to, id_from] = 1
 
-        self.cities[id_to] = coords_to
-        self.pop[id_to] = 0.2*self.pop[id_from]
-        self.res[id_to] = 0.2*self.res[id_from]
-        self.r[id_to] = self.states.dom.I_r[coords_to[0], coords_to[1]]
-        self.states.add_colony(id_from, id_to)
+            self.cities[id_to] = coords_to
+            self.pop[id_to] = 0.2*self.pop[id_from]
+            self.res[id_to] = 0.2*self.res[id_from]
+            self.r[id_to] = self.states.dom.I_r[coords_to[0], coords_to[1]]
+            self.states.add_colony(id_from, id_to)
 
-        self.number += 1
+            self.number += 1
 
 
     def grow(self):
@@ -188,10 +188,11 @@ class Regions:
         for i, startpos in enumerate(start):
             city_idx = int(self.map[startpos[0], startpos[1]])
 
-            if np.random.rand() > 1-0.001:
+            if np.random.rand() > 1-0.005:
                 go_to = startpos + np.random.randint(-1, 2, 2)*self.states.expend
                 if self.states.dom.exists(go_to):
-                    self.colonize(city_idx, go_to)
+                    if self.map[go_to[0], go_to[1]] == -1:
+                        self.colonize(startpos, city_idx, go_to)
 
             for id in range(-1,2):
                 for jd in range(-1,2):
@@ -202,7 +203,7 @@ class Regions:
                             self.r[city_idx] += self.states.dom.I_r[newpos[0], newpos[1]]
                             self.area[self.number] += 1
                             self.canExplore[newpos[0], newpos[1]] = True
-                        else:
+                        elif int(self.map[newpos[0], newpos[1]]) > 0 and self.states.owned_regions[int(self.map[newpos[0], newpos[1]])] != self.states.owned_regions[city_idx]:
                             self.roads[int(self.map[newpos[0], newpos[1]]), city_idx] = 2
                             self.roads[city_idx, int(self.map[newpos[0], newpos[1]])] = 2
 

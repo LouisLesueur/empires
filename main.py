@@ -8,7 +8,7 @@ from matplotlib.collections import LineCollection
 from PIL import Image
 
 
-niter = 200
+niter = 500
 scale = 1
 lenN = 100
 
@@ -16,7 +16,7 @@ dt = 0.01
 dx = 500 #km
 
 Europe = Domain('maps/europe')
-State = States(Europe, 150, 600, 0.001)
+State = States(Europe, 120, 500, 0.001)
 Provinces = Regions(State)
 
 sim = Simulation(Provinces,
@@ -28,25 +28,29 @@ sim = Simulation(Provinces,
 
 sim.random_city_state(lenN)
 fig, ax = plt.subplots()
-#plt.axis('off')
+plt.axis('off')
 
 
 im=plt.imshow(sim.get_img())
 scat = plt.scatter(sim.regions.cities.T[1], sim.regions.cities.T[0], s=1)
 ax.set_title(f'Year: 0')
 
+lines = sim.get_roads()
+lc = LineCollection(lines, linewidths=1, colors='black', linestyle='solid')
+ax.add_collection(lc)
 
 def animate(i):
     for _ in range(scale):
         sim.update()
     im.set_array(sim.get_img())
+    lc.set_segments(sim.get_roads())
     ax.set_title(f'Year: {i*scale*dt}, {sim.regions.states.number} states, {sim.regions.number} cities')
     scat.set_offsets(np.c_[sim.regions.cities.T[1], sim.regions.cities.T[0]])
 
     print(f"step {i}\r", sep=' ', end='', flush=True)
-    return [im]
+    return im,lc,
 
 writer = PillowWriter(fps=15)
 anim = FuncAnimation(fig, animate, frames = niter, blit=False, interval = 100)
-#anim.save('out.gif', writer=writer)
+anim.save('out.gif', writer=writer)
 plt.show()
