@@ -78,9 +78,10 @@ class States:
         self.owned_regions[id_to] = state_from
 
     def add_state(self, init_region):
-        self.owned_regions[init_region] = self.number
-        self.number += 1
 
+        if self.number < self.max:
+            self.owned_regions[init_region] = self.number
+            self.number += 1
 
 
 class Regions:
@@ -103,12 +104,20 @@ class Regions:
         self.stab = 1000+np.zeros(self.max)
 
 
+    def revolts(self):
+        if np.random.rand() > 1-0.05:
+            for city in np.where(self.stab < 0)[0]:
+                if np.random.rand() > 1-0.05:
+                    self.states.add_state(city)
+
+
     def update(self, c0, chi, n0, Rm, dt):
-        resMax = self.area*100 + 1e-6
+        resMax = self.area*10 + 50
+
         popMax = self.area*100 + 1e-6
 
         conso = c0*(self.res/(Rm + self.res))*self.pop
-        self.stab = self.res - Rm
+        self.stab[self.pop>0] = self.res[self.pop>0] - Rm
 
         renew = self.r
         limit = -self.r*(self.res/resMax)
@@ -125,6 +134,8 @@ class Regions:
         dN = (G*self.pop + chi * conso)*dt
         self.pop += dN
 
+        self.pop = np.maximum(0,self.pop)
+        self.res = np.maximum(0,self.res)
 
     def add_city_state(self, pos, init_pop, init_res):
 
@@ -189,7 +200,7 @@ class Regions:
         for i, startpos in enumerate(start):
             city_idx = int(self.map[startpos[0], startpos[1]])
 
-            if np.random.rand() > 1-0.009:
+            if np.random.rand() > 1-0.03:
                 go_to = startpos + np.random.randint(-1, 2, 2)*self.states.expend
                 if self.states.dom.exists(go_to):
                     if self.map[go_to[0], go_to[1]] == -1:
