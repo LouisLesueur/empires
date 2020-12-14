@@ -34,7 +34,11 @@ class Simulation:
         self.time += self.dt
         self.regions.update(self.c0, self.chi, self.n0, self.Rm, self.dt)
         self.regions.grow()
-        # self.regions.revolts()
+
+        if self.time > 5*self.dt:
+            #self.regions.revolts()
+            self.regions.states.update_diplomacy(self.regions.roads, 0.1)
+            self.regions.wars_and_alliances()
 
     def get_img(self):
         out = np.ones((*self.dom.I.shape,3))

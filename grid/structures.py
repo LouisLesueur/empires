@@ -83,6 +83,25 @@ class States:
             self.owned_regions[init_region] = self.number
             self.number += 1
 
+    def update_diplomacy(self, roads, margin):
+        # 0: pacific
+        # 1: neutral
+        # 2: agressive
+        for i in range(self.max):
+            for j in range(self.max):
+                if np.abs(self.res[i] - self.res[j]) < margin:
+                    self.relations[i,j] = 1
+                    self.relations[j,i] = 1
+                elif self.res[i] < self.res[j]:
+                    self.relations[i,j] = 0
+                    self.relations[j,i] = 2
+                else:
+                    self.relations[i,j] = 2
+                    self.relations[j,i] = 0
+
+
+
+
 
 class Regions:
     def __init__(self, states):
@@ -110,6 +129,25 @@ class Regions:
                 if np.random.rand() > 1-0.05:
                     self.states.add_state(city)
 
+    def wars_and_alliances(self):
+        if np.random.rand() > 1-0.1:
+            cancoop = np.array(np.where(self.roads == 2)).T
+
+            if len(cancoop) > 0:
+                coop = cancoop[np.random.randint(0,len(cancoop), np.random.randint(0,len(cancoop)))]
+
+
+                for pair in coop:
+                    if self.states.relations[pair[0], pair[1]] == 0:
+                        self.roads[pair[0], pair[1]] = 1
+                        self.roads[pair[1], pair[0]] = 1
+                    elif self.states.relations[pair[0], pair[1]] == 2:
+                        self.states.owned_regions[pair[1]] = self.states.owned_regions[pair[0]]
+                        self.roads[pair[0], pair[1]] = 1
+                        self.roads[pair[1], pair[0]] = 1
+
+
+
 
     def update(self, c0, chi, n0, Rm, dt):
         resMax = self.area*10 + 50
@@ -136,6 +174,8 @@ class Regions:
 
         self.pop = np.maximum(0,self.pop)
         self.res = np.maximum(0,self.res)
+
+
 
     def add_city_state(self, pos, init_pop, init_res):
 
