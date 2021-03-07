@@ -10,10 +10,6 @@ It is a simple reaction–diffusion system based on darwinian dynamics.
 
 Documentation (still in construction) is accessible [here](https://louislesueur.github.io/empires/)
 
-# To-do
+# Build
 
-- [ ] draw roads properly (geodesics ?)
-- [ ] find rules for migration and trade
-- [ ] tune parameters
-- [ ] add war and peace in the code
-- [ ] add reinforcement learning to allow states to find policies
+This project uses eigen, opencv and cmake. The building operations are classical. The main framework is still in construction, the code will be more modular in the futur.
