@@ -61,7 +61,7 @@ class CityGraph{
 
 	public:
 		int nCities() {return n_cities;}
-		void explore_step(MatrixXi &prov, MatrixXi &terr, MatrixXi &exp, MatrixXi &cts);
+		void explore_step(MatrixXi &prov, MatrixXi &terr, MatrixXi &exp, MatrixXi &cts, int EXPLORE=50);
 		bool add_city(City cit);
 		void update_pop(VectorXf inc_res);
 		void update_road(int id1, int id2, int value);
@@ -122,8 +122,11 @@ class World{
 		MatrixXi Map; //0: sea 1: land 2: road
 		MatrixXf Topography;
 		MatrixXi Provinces; //0: unknown, i:i-1
+		MatrixXi States; 
 		MatrixXi CanExpand; 
 		MatrixXf Resources;
+
+		float scaling;
 
 		int width;
 		int height;
@@ -140,14 +143,25 @@ class World{
 		std::vector<cv::Vec3b> state_palette;
 
 	public:
+		int cols() {return Map.cols();}
+		int rows() {return Map.rows();}
+		bool isLand(int i, int j){
+			if(Map(i,j)==1)
+				return true;
+			return false;
+		}
+
+		void genStateMap();
+
 		int nCities(){return CitiesG->nCities();}
 		int nStates(){return StateG->nStates();}
 		void add_city_state(City cit, State stat);
 		void update_resources();
 		void update_pop();
+		void update_diplomacy();
 		VectorXf resources_per_city();
-		void expand_provinces(int thresh);
-		World(std::string path, int cit, int stat);
+		void expand_provinces(int thresh, int range_px, int new_cities_per_turn);
+		World(std::string path, int cit, int stat, float coef=1);
 
 		cv::Mat get_provinces_image();
 		cv::Mat get_pop_image();

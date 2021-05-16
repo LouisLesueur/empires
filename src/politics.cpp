@@ -92,7 +92,7 @@ City::City(const Vector2i &pos,
 
 //-------------------------------------------------------------
 
-void CityGraph::explore_step(MatrixXi &prov, MatrixXi &terr, MatrixXi &exp, MatrixXi &cts){
+void CityGraph::explore_step(MatrixXi &prov, MatrixXi &terr, MatrixXi &exp, MatrixXi &cts, int EXPLORE){
 	int state;
 	bool search=true;
 
@@ -114,7 +114,6 @@ void CityGraph::explore_step(MatrixXi &prov, MatrixXi &terr, MatrixXi &exp, Matr
 	prb[dirb] = 0.15;
 	prb[dira] = 0.15;
 
-	int EXPLORE = 100;
 	std::vector<Vector2i> path = gen_path(city_nodes[origin].Pos(), terr, EXPLORE, prb);
 
 	bool isOk = true;
@@ -158,7 +157,7 @@ void CityGraph::explore_step(MatrixXi &prov, MatrixXi &terr, MatrixXi &exp, Matr
 		}
 		
 		if(this->add_city(City(path[EXPLORE-1], "test"))){
-			std::cout<<state<<std::endl;
+			std::cout<<"new city founded by state: "<<state<<std::endl;
 			cts(n_cities-1, state) = 1;
 			exp(path[EXPLORE-1](0), path[EXPLORE-1](1)) = 1;
 		}
@@ -262,18 +261,24 @@ void StateGraph::apply_taxes(VectorXf &money){
 //--------------------------------------------------------------
 
 
-World::World(std::string path, int cit, int stat){
+World::World(std::string path, int cit, int stat, float coef){
+
+	scaling = coef;
+
 	cv::Mat terr = cv::imread(path+"bound.png", cv::IMREAD_GRAYSCALE);
+	cv::resize(terr, terr, cv::Size(), coef, coef);
 	cv::cv2eigen(terr/255, Map);
 
 	height = terr.rows;
 	width = terr.cols;
 
 	cv::Mat topo = cv::imread(path+"topo.png", cv::IMREAD_GRAYSCALE);
+	cv::resize(topo, topo, cv::Size(), coef, coef);
 	cv::cv2eigen(topo/255, Topography);
 
 	Provinces = MatrixXi::Zero(height, width);
 	CanExpand = MatrixXi::Zero(height, width);
+	States = MatrixXi::Zero(height, width);
 	Resources = MatrixXf::Constant(height, width, 1);
 
 	n_cities = cit;
@@ -324,16 +329,33 @@ void World::update_pop(){
 	CitiesG->update_pop(res);
 }
 
-void World::expand_provinces(int thresh){
-	CitiesG->explore_step(Provinces, Map, CanExpand, state_city);
+void World::expand_provinces(int thresh, int range_px, int new_cities_per_turn){
+
+	int new_cities = rand()%new_cities_per_turn;
+
+	for(int i=0; i<new_cities; i++)
+		CitiesG->explore_step(Provinces, Map, CanExpand, state_city, range_px);
+	
 	int roll;
 
 	std::vector<Vector2i> expidx = {};
 	for(int i=1; i<height-1; i++){
 		for(int j=1; j<width-1; j++){
+			bool inside = true;
+
 			if(CanExpand(i,j)==1){
-				expidx.push_back(Vector2i(i,j));
+				for(int k=0; k<8; k++){
+					Vector2i dir = DIRECTIONS.row(k);
+					if(States(i+dir(0),j+dir(1)) != States(i,j))
+						inside = false;
+				}
 			}
+			if(inside)
+				CanExpand(i,j) = 0;
+			
+
+			if(CanExpand(i,j)==1)
+				expidx.push_back(Vector2i(i,j));
 		}
 	}
 	
@@ -344,9 +366,9 @@ void World::expand_provinces(int thresh){
 			//Vector2i dir = DIRECTIONS.row(dir_id);
 			int i = expidx[k](0);
 			int j = expidx[k](1);
-
-			for(int k=0; k<8; k++){
-				Vector2i dir = DIRECTIONS.row(k);
+			bool expanded = false;
+			for(int l=0; l<8; l++){
+				Vector2i dir = DIRECTIONS.row(l);
 
 				if(Map(i+dir(0), j+dir(1))==1){
 					if(Provinces(i+dir(0), j+dir(1))==0){
@@ -355,11 +377,31 @@ void World::expand_provinces(int thresh){
 					}
 				}
 			}
-		CanExpand(i,j) = 0;
-			
+			CanExpand(i,j) = 0;	
+		}
+	}
+
+	this-> genStateMap();
+}
+
+
+void World::genStateMap(){
+	for(int i=0; i<height; i++){
+		for(int j=0; j<width; j++){
+			States(i,j) == -1;
+			int prov = Provinces(i,j)-1;
+
+			if(prov < 0)
+				continue;
+			int state = 0;
+			for(int k=0; k<n_states; k++){
+				if(state_city(prov, k)==1)
+					States(i,j)=k;
+			}
 		}
 	}
 }
+
 
 
 cv::Mat World::get_provinces_image(){
@@ -371,17 +413,13 @@ cv::Mat World::get_provinces_image(){
 		for(int j=0; j<width; j++){
 			if(Map(i,j) == 0){
 				img.at<cv::Vec3b>(i,j) = watercol;
-			} else if(Map(i,j) == 1){
+			} else if(Map(i,j) == 1 || Map(i,j)==2){
 				img.at<cv::Vec3b>(i,j) = landcol;
 				if(Provinces(i,j)>0){
 					img.at<cv::Vec3b>(i,j) = province_palette[Provinces(i,j)-1];
 				}
 			}
 			
-			if(Map(i,j) == 2){
-				img.at<cv::Vec3b>(i,j) = roadcol;
-			}
-
 		}
 	}
 
@@ -420,26 +458,19 @@ cv::Mat World::get_states_image(){
 		for(int j=0; j<width; j++){
 			if(Map(i,j) == 0){
 				img.at<cv::Vec3b>(i,j) = watercol;
-			} else if(Map(i,j) == 1){
+			} else if(Map(i,j) == 1 || Map(i,j) == 2){
 				img.at<cv::Vec3b>(i,j) = landcol;
-				if(Provinces(i,j)>0){
-					int prov = Provinces(i,j)-1;
-					int state = 0;
-					for(int k=0; k<n_states; k++){
-						if(state_city(prov, k)==1)
-							state=k;
-					}
-
-					img.at<cv::Vec3b>(i,j) = state_palette[state];
+				if(States(i,j)>0){
+					img.at<cv::Vec3b>(i,j) = state_palette[States(i,j)];
+					if(CanExpand(i,j)==1)
+						img.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
 				}
 			}
 			
-			if(Map(i,j) == 2){
-				img.at<cv::Vec3b>(i,j) = roadcol;
-			}
 
 		}
 	}
+	//cv::resize(img, img, cv::Size(), 1/scaling, 1/scaling);
 
 	return img;
 }
