@@ -8,6 +8,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/eigen.hpp>
 #include <math.h>       /* exp */
+#include <unordered_map>
 
 using namespace Eigen;
 
@@ -61,7 +62,7 @@ class CityGraph{
 
 	public:
 		int nCities() {return n_cities;}
-		void explore_step(MatrixXi &prov, MatrixXi &terr, MatrixXi &exp, MatrixXi &cts, int EXPLORE=50);
+		void explore_step(MatrixXi &prov, MatrixXi &terr, MatrixXi &exp, std::unordered_map<int, int> &cts, int EXPLORE=50);
 		bool add_city(City cit);
 		void update_pop(VectorXf inc_res);
 		void update_road(int id1, int id2, int value);
@@ -85,7 +86,9 @@ class State{
 	private:
 		std::string name;	
 		float taxe_rate;
-		float wealth;
+		float military_wealth;
+		float diplomacy_wealth;
+		float infra_wealth;
 
 		//Budget
 		float infrastructure; //Will reduce inequalities
@@ -99,8 +102,7 @@ class State{
 		      float init_taxe=0.1, float init_wealth=2, 
 		      float init_inf=0.33, float init_mil=0.33, float init_dip=0.33);
 
-		Vector3f get_money();	
-		float apply_taxes(float money);
+		float apply_taxes(float inc_money);
 		void change_policy(float new_taxes, 
 				   float new_inf, float new_mil, float new_dip);
 
@@ -121,7 +123,7 @@ class StateGraph{
 
 
 		MatrixXf get_money();
-		void apply_taxes(VectorXf &money);
+		float apply_taxes(int i, float inc_money);
 		void update_power(MatrixXi &states, MatrixXi &canexp);
 		void add_state(State stat);
 		void update_dip(int s1, int s2, int value);
@@ -145,8 +147,8 @@ class World{
 		int n_cities;
 		int n_states;
 
-		MatrixXi state_city; //0: unknown, 1: owned, 2: wanted 
-		
+		std::unordered_map<int, int> city_T_state;
+
 		CityGraph *CitiesG;
 		StateGraph *StateG;
 		

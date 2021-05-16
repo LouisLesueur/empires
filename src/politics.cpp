@@ -92,7 +92,7 @@ City::City(const Vector2i &pos,
 
 //-------------------------------------------------------------
 
-void CityGraph::explore_step(MatrixXi &prov, MatrixXi &terr, MatrixXi &explo, MatrixXi &cts, int EXPLORE){
+void CityGraph::explore_step(MatrixXi &prov, MatrixXi &terr, MatrixXi &explo, std::unordered_map<int,int> &cts, int EXPLORE){
 	int state;
 	bool search=true;
 
@@ -122,9 +122,10 @@ void CityGraph::explore_step(MatrixXi &prov, MatrixXi &terr, MatrixXi &explo, Ma
 	
 	else{
 		for(int i=0; i<EXPLORE; i++){
-			if(prov(path[i](0), path[i](1))-1>0 && prov(path[i](0), path[i](1)) != origin+1){
+			if(prov(path[i](0), path[i](1))-1>0 && cts[prov(path[i](0), path[i](1))-1] != cts[origin]){
 				isOk = false;
 				this->update_road(origin, prov(path[i](0), path[i](1))-1, 2);
+				break;
 			}
 		}
 	}
@@ -144,18 +145,10 @@ void CityGraph::explore_step(MatrixXi &prov, MatrixXi &terr, MatrixXi &explo, Ma
 		}
 	
 		this->update_road(origin, n_cities, 1);
-		state=0;
-		search=true;
-		while(search){
-			if(cts(origin,state)==1)
-				search=false;
-			else
-				state++;
-		}
 		
 		if(this->add_city(City(path[EXPLORE-1], "test"))){
 			std::cout<<"new city founded by state: "<<state<<std::endl;
-			cts(n_cities-1, state) = 1;
+			cts[n_cities-1] = cts[origin];
 			explo(path[EXPLORE-1](0), path[EXPLORE-1](1)) = 1;
 		}
 	}
@@ -217,22 +210,21 @@ State::State(std::string nm,
 	
 	name = nm;
 	taxe_rate = init_taxe;
-	wealth = init_wealth;
+	diplomacy_wealth = init_wealth;
+	infra_wealth = init_wealth;
+	military_wealth = init_wealth;
 	infrastructure = init_inf;
 	military = init_mil;
 	diplomacy = init_dip;
 }
 
 
-Vector3f State::get_money(){
-	Vector3f out(infrastructure*wealth, military*wealth, diplomacy*wealth);
-	wealth -= out.sum();
-	return out;
-}
+float State::apply_taxes(float inc_money){
+	diplomacy_wealth += taxe_rate*inc_money*diplomacy;
+	infra_wealth += taxe_rate*inc_money*infrastructure;
+	military_wealth += taxe_rate*inc_money*military;
 
-float State::apply_taxes(float money){
-	wealth = taxe_rate*money;
-	return money*=(1-taxe_rate);
+	return inc_money*=(1-taxe_rate);
 }
 
 void State::change_policy(float new_taxes, 
@@ -260,13 +252,6 @@ void StateGraph::add_state(State stat){
 	}
 }
 
-MatrixXf StateGraph::get_money(){
-	MatrixXf out(3, n_states);
-	for(int i=0; i<n_states; i++)
-		out.col(i) = state_nodes[i].get_money();
-	return out;
-} 
-
 void StateGraph::update_power(MatrixXi &states, MatrixXi &canexp){
 
 	VectorXf areas = VectorXf::Zero(n_states);
@@ -282,14 +267,16 @@ void StateGraph::update_power(MatrixXi &states, MatrixXi &canexp){
 		}
 	}
 
-	for(int k=0; k<n_states; k++)
-		state_nodes[k].update_power(areas(k)/(1+exp(0.00035*borders(k)+1)));
+	for(int k=0; k<n_states; k++){
 
+		float territory_power = areas(k)/(1+exp(0.00035*borders(k)+1));
+		//float invests_power = state_nodes[k].military_wealth; 
+		state_nodes[k].update_power(areas(k)/(1+exp(0.00035*borders(k)+1)));
+		}
 }
 
-void StateGraph::apply_taxes(VectorXf &money){
-	for(int i=0; i<n_states; i++)
-		money(i) = state_nodes[i].apply_taxes(money(i));
+float StateGraph::apply_taxes(int i, float inc_monney){
+	return state_nodes[i].apply_taxes(inc_monney);
 }
 
 
@@ -340,8 +327,8 @@ World::World(std::string path, int cit, int stat, float coef){
 	n_cities = cit;
 	n_states = stat;
 	
-	state_city = MatrixXi::Zero(n_cities, n_states); 
-	
+	city_T_state = {};
+
 	CitiesG = new CityGraph(cit);
 	StateG = new StateGraph(stat);
 	
@@ -357,7 +344,7 @@ World::World(std::string path, int cit, int stat, float coef){
 void World::add_city_state(City cit, State stat){
 	CitiesG->add_city(cit);
 	StateG->add_state(stat);
-	state_city(CitiesG->nCities()-1, StateG->nStates()-1) = 1;
+	city_T_state[CitiesG->nCities()-1] = StateG->nStates()-1; 
 	CanExpand(cit.Pos()(0), cit.Pos()(1)) = 1;
 }
 
@@ -368,6 +355,7 @@ void World::update_resources(){
 
 void World::update_diplomacy(int new_wars_per_turn){
 
+	this->genStateMap();
 	StateG->update_power(States, CanExpand);
 
 	int n_wars = rand() % new_wars_per_turn;
@@ -378,14 +366,8 @@ void World::update_diplomacy(int new_wars_per_turn){
 		if(war(0)==-1 && war(1)==-1)
 			return;
 
-		int state1 = 0;
-		int state2 = 0;
-		for(int k=0; k<n_states; k++){
-			if(state_city(war(0), k)==1)
-				state1=k;
-			if(state_city(war(1), k)==1)
-				state2=k;
-		}
+		int state1 = city_T_state[war(0)];
+		int state2 = city_T_state[war(1)];
 
 		if(state1 == state2)
 			CitiesG->update_road(war(0), war(1), 1);
@@ -394,25 +376,21 @@ void World::update_diplomacy(int new_wars_per_turn){
 			std::cout << "War between "<<war(0)<<" "<<war(1)<<std::endl;
 		
 			int winner = StateG->war(state1, state2);
-			int looser;
 
 			if(winner == state1)
-				looser = state2;
+				city_T_state[war(1)] = winner;
 			else
-				looser = state1;
+				city_T_state[war(0)] = winner;
 
-			state_city(war(0), winner) = 1;
-			state_city(war(1), winner) = 1;
-			state_city(war(0), looser) = 0;
-			state_city(war(1), looser) = 0;
+
 
 			CitiesG->update_road(war(0), war(1), 1);
 		}
 	}
-	this->genStateMap();
 
 
 }
+
 	
 VectorXf World::resources_per_city(){
 
@@ -420,8 +398,8 @@ VectorXf World::resources_per_city(){
 	int res=0;
 	for(int i=0; i<height; i++){
 		for(int j=0; j<width; j++){
-			if(Map(i,j)>=1)
-				city_res(Map(i,j)-1) += Resources(i,j);
+			if(Provinces(i,j)>=1)
+				city_res(Provinces(i,j)-1) += Resources(i,j);
 		}
 	}
 
@@ -431,6 +409,12 @@ VectorXf World::resources_per_city(){
 
 void World::update_pop(){
 	VectorXf res = this->resources_per_city();
+	
+	for(int i=0; i<CitiesG->nCities(); i++){
+		float to_consume  = StateG->apply_taxes(city_T_state[i], res(i));
+		res(i) = to_consume;
+	}
+
 	CitiesG->update_pop(res);
 }
 
@@ -439,7 +423,7 @@ void World::expand_provinces(int thresh, int range_px, int new_cities_per_turn){
 	int new_cities = rand()%new_cities_per_turn;
 
 	for(int i=0; i<new_cities; i++)
-		CitiesG->explore_step(Provinces, Map, CanExpand, state_city, range_px);
+		CitiesG->explore_step(Provinces, Map, CanExpand, city_T_state, range_px);
 	
 	this->genStateMap();
 
@@ -490,6 +474,8 @@ void World::expand_provinces(int thresh, int range_px, int new_cities_per_turn){
 				CanExpand(i,j) = 0;	
 		}
 	}
+	
+	this->genStateMap();
 
 }
 
@@ -497,16 +483,13 @@ void World::expand_provinces(int thresh, int range_px, int new_cities_per_turn){
 void World::genStateMap(){
 	for(int i=0; i<height; i++){
 		for(int j=0; j<width; j++){
-			States(i,j) == -1;
+			States(i,j) = -1;
 			int prov = Provinces(i,j)-1;
 
 			if(prov < 0)
 				continue;
-			int state = 0;
-			for(int k=0; k<n_states; k++){
-				if(state_city(prov, k)==1)
-					States(i,j)=k;
-			}
+
+			States(i,j) = city_T_state[prov];
 		}
 	}
 }
@@ -568,7 +551,7 @@ cv::Mat World::get_states_image(bool show_boundaries, bool show_cities, bool sho
 				img.at<cv::Vec3b>(i,j) = watercol;
 			} else if(Map(i,j) == 1){
 				img.at<cv::Vec3b>(i,j) = landcol;
-				if(States(i,j)>0){
+				if(States(i,j)>=0){
 					img.at<cv::Vec3b>(i,j) = state_palette[States(i,j)];
 					if(show_boundaries && CanExpand(i,j)==1)
 						img.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);

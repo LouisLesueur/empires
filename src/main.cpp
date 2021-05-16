@@ -41,9 +41,9 @@ int main( int argc, char** argv  )
 	float coef = 0.5;
 	int range_px = 50*coef;
 
-	World world("../maps/europe/", 400, 400, coef);
-
-	init_cities(100, world);
+	World world("../maps/mini_europe/", 400, 400, coef);
+	
+	init_cities(50, world);
 
 	char keyboard = ' ';
 
