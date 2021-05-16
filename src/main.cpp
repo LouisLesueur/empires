@@ -33,10 +33,11 @@ void init_cities(int n, World& world){
 
 int main( int argc, char** argv  )
 {
-	bool SAVE_FIG = false;
+	bool SAVE_FIG = true;
 	string FIG_PATH = "figs/";
 	int step = 0;
 	int new_cities_per_turn = 10;
+	int new_wars_per_turn = 5;
 	float coef = 0.5;
 	int range_px = 50*coef;
 
@@ -53,13 +54,11 @@ int main( int argc, char** argv  )
 		world.update_pop();
 		world.expand_provinces(10, range_px, new_cities_per_turn);
 		
-		if(step > 100)
-			world.update_diplomacy();
-		world.genStateMap();
-		cv::Mat out = world.get_states_image();
-		cv::Mat out_pop = world.get_pop_image();
-		cv::imshow("map", out);
-		cv::imshow("pop", out_pop);
+		world.update_diplomacy(new_wars_per_turn);
+		cv::Mat out = world.get_states_image(false, true, false);
+		//cv::Mat out_pop = world.get_pop_image();
+		//cv::imshow("map", out);
+		//cv::imshow("pop", out_pop);
 
 		std::stringstream stream;
 		stream << std::setw(10) << std::setfill('0') << step;

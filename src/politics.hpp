@@ -11,7 +11,6 @@
 
 using namespace Eigen;
 
-static cv::Vec3b roadcol(137, 137, 137);
 static cv::Vec3b landcol(168, 187, 191);
 static cv::Vec3b watercol(170, 155, 39);
 
@@ -75,6 +74,9 @@ class CityGraph{
 		}
 
 		Vector2i possible_war();
+		City get_city(int i){return city_nodes[i];}
+		int get_road(int i, int j){return Roads(i,j);}
+
 };
 
 
@@ -128,7 +130,7 @@ class StateGraph{
 
 class World{
 	private:
-		MatrixXi Map; //0: sea 1: land 2: road
+		MatrixXi Map; //0: sea 1: land
 		MatrixXf Topography;
 		MatrixXi Provinces; //0: unknown, i:i-1
 		MatrixXi States; 
@@ -167,7 +169,7 @@ class World{
 		void add_city_state(City cit, State stat);
 		void update_resources();
 		void update_pop();
-		void update_diplomacy();
+		void update_diplomacy(int new_wars_per_turn );
 		VectorXf resources_per_city();
 		void expand_provinces(int thresh, int range_px, int new_cities_per_turn);
 		World(std::string path, int cit, int stat, float coef=1);
@@ -175,7 +177,7 @@ class World{
 		cv::Mat get_provinces_image();
 		cv::Mat get_pop_image();
 		cv::Mat get_res_image();
-		cv::Mat get_states_image(bool show_boundaries=false);
+		cv::Mat get_states_image(bool show_boundaries=false, bool show_cities=true, bool show_roads=true);
 		
 };
 

@@ -92,7 +92,7 @@ City::City(const Vector2i &pos,
 
 //-------------------------------------------------------------
 
-void CityGraph::explore_step(MatrixXi &prov, MatrixXi &terr, MatrixXi &exp, MatrixXi &cts, int EXPLORE){
+void CityGraph::explore_step(MatrixXi &prov, MatrixXi &terr, MatrixXi &explo, MatrixXi &cts, int EXPLORE){
 	int state;
 	bool search=true;
 
@@ -122,7 +122,7 @@ void CityGraph::explore_step(MatrixXi &prov, MatrixXi &terr, MatrixXi &exp, Matr
 	
 	else{
 		for(int i=0; i<EXPLORE; i++){
-			if(prov(path[i](0), path[i](1))>0 && prov(path[i](0), path[i](1)) != origin+1){
+			if(prov(path[i](0), path[i](1))-1>0 && prov(path[i](0), path[i](1)) != origin+1){
 				isOk = false;
 				this->update_road(origin, prov(path[i](0), path[i](1))-1, 2);
 			}
@@ -137,13 +137,10 @@ void CityGraph::explore_step(MatrixXi &prov, MatrixXi &terr, MatrixXi &exp, Matr
 						prov(path[i](0), path[i](1))=origin+1;
 					else
 						prov(path[i](0), path[i](1))=n_cities+1;
-					terr(path[i](0), path[i](1))=2;
-					exp(path[i](0), path[i](1))=1;
+					explo(path[i](0), path[i](1))=1;
 				}
-			} else if(terr(path[i](0), path[i](1))==0){
-				terr(path[i](0), path[i](1))=2;
-
-			}
+			} 
+			
 		}
 	
 		this->update_road(origin, n_cities, 1);
@@ -159,7 +156,7 @@ void CityGraph::explore_step(MatrixXi &prov, MatrixXi &terr, MatrixXi &exp, Matr
 		if(this->add_city(City(path[EXPLORE-1], "test"))){
 			std::cout<<"new city founded by state: "<<state<<std::endl;
 			cts(n_cities-1, state) = 1;
-			exp(path[EXPLORE-1](0), path[EXPLORE-1](1)) = 1;
+			explo(path[EXPLORE-1](0), path[EXPLORE-1](1)) = 1;
 		}
 	}
 
@@ -288,7 +285,8 @@ void StateGraph::update_power(MatrixXi &states, MatrixXi &canexp){
 	}
 
 	for(int k=0; k<n_states; k++)
-		state_nodes[k].update_power(areas(k)/(1+exp(0.035*borders(k)+1)));
+		state_nodes[k].update_power(areas(k)/(1+exp(0.00035*borders(k)+1)));
+
 }
 
 void StateGraph::apply_taxes(VectorXf &money){
@@ -370,39 +368,50 @@ void World::update_resources(){
 }
 
 
-void World::update_diplomacy(){
+void World::update_diplomacy(int new_wars_per_turn){
 
 	StateG->update_power(States, CanExpand);
-	
-	Vector2i war = CitiesG->possible_war();
-	if(war(0)==-1 && war(1)==-1)
-		return;
 
-	std::cout << "War between "<<war(0)<<" "<<war(1)<<std::endl;
-	int state1 = 0;
-	int state2 = 0;
-	for(int k=0; k<n_states; k++){
-		if(state_city(war(0), k)==1)
-			state1=k;
-		if(state_city(war(1), k)==1)
-			state2=k;
+	int n_wars = rand() % new_wars_per_turn;
+
+	for(int l=0; l<n_wars; l++){
+
+		Vector2i war = CitiesG->possible_war();
+		if(war(0)==-1 && war(1)==-1)
+			return;
+
+		int state1 = 0;
+		int state2 = 0;
+		for(int k=0; k<n_states; k++){
+			if(state_city(war(0), k)==1)
+				state1=k;
+			if(state_city(war(1), k)==1)
+				state2=k;
+		}
+
+		if(state1 == state2)
+			CitiesG->update_road(war(0), war(1), 1);
+
+		else{
+			std::cout << "War between "<<war(0)<<" "<<war(1)<<std::endl;
+		
+			int winner = StateG->war(state1, state2);
+			int looser;
+
+			if(winner == state1)
+				looser = state2;
+			else
+				looser = state1;
+
+			state_city(war(0), winner) = 1;
+			state_city(war(1), winner) = 1;
+			state_city(war(0), looser) = 0;
+			state_city(war(1), looser) = 0;
+
+			CitiesG->update_road(war(0), war(1), 1);
+		}
 	}
-
-	int winner = StateG->war(state1, state2);
-	int looser;
-
-	if(winner == state1)
-		looser = state2;
-	else
-		looser = state1;
-
-	state_city(war(0), winner) = 1;
-	state_city(war(1), winner) = 1;
-	state_city(war(0), looser) = 0;
-	state_city(war(1), looser) = 0;
-
-	CitiesG->update_road(war(0), war(1), 1);
-
+	this->genStateMap();
 
 
 }
@@ -434,6 +443,8 @@ void World::expand_provinces(int thresh, int range_px, int new_cities_per_turn){
 	for(int i=0; i<new_cities; i++)
 		CitiesG->explore_step(Provinces, Map, CanExpand, state_city, range_px);
 	
+	this->genStateMap();
+
 	int roll;
 
 	std::vector<Vector2i> expidx = {};
@@ -549,9 +560,8 @@ cv::Mat World::get_pop_image(){
 }
 
 
-cv::Mat World::get_states_image(bool show_boundaries){
+cv::Mat World::get_states_image(bool show_boundaries, bool show_cities, bool show_roads){
 
-	//BGR !!!!!!!!!!!
 	cv::Mat img(height, width, CV_8UC3);
 
 	for(int i=0; i<height; i++){
@@ -565,13 +575,33 @@ cv::Mat World::get_states_image(bool show_boundaries){
 					if(show_boundaries && CanExpand(i,j)==1)
 						img.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
 				}
-			} else
-				img.at<cv::Vec3b>(i,j) = roadcol;
+			} 
 
 			
 
 		}
 	}
+
+	if(show_cities){
+		for(int i=0; i<CitiesG->nCities(); i++){
+			Vector2i pos = CitiesG->get_city(i).Pos();
+			cv::circle(img, cv::Point(pos(1), pos(0)), 1, 0, 2);
+			
+			if(show_roads){
+				for(int j=i; j<CitiesG->nCities(); j++){
+					int link_ij = CitiesG->get_road(i,j);
+					if(link_ij==1){
+						Vector2i pos2 = CitiesG->get_city(j).Pos();
+						cv::line(img, cv::Point(pos(1), pos(0)), cv::Point(pos2(1), pos2(0)), 0);
+					}
+				}
+
+			}
+		}
+
+
+	}
+
 	//cv::resize(img, img, cv::Size(), 1/scaling, 1/scaling);
 
 	return img;
