@@ -41,7 +41,7 @@ int main( int argc, char** argv  )
 	float coef = 0.5;
 	int range_px = 50*coef;
 
-	World world("../maps/greece/", 1000, 1000, coef);
+	World world("../maps/europe/", 400, 400, coef);
 
 	init_cities(100, world);
 
@@ -52,7 +52,7 @@ int main( int argc, char** argv  )
 		cout<<"step: "<< step<< " Cities "<<world.nCities()<<" States "<<world.nStates()<<endl;
 		world.update_resources();
 		world.update_pop();
-		world.expand_provinces(10, range_px, new_cities_per_turn);
+		world.expand_provinces(5, range_px, new_cities_per_turn);
 		
 		world.update_diplomacy(new_wars_per_turn);
 		cv::Mat out = world.get_states_image(false, true, false);

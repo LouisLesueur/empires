@@ -272,14 +272,12 @@ void StateGraph::update_power(MatrixXi &states, MatrixXi &canexp){
 	VectorXf areas = VectorXf::Zero(n_states);
 	VectorXf borders = VectorXf::Zero(n_states);
 
-	for(int k=0; k<n_states; k++){
-		for(int i=0; i<states.rows(); i++){
-			for(int j=0; j<states.cols(); j++){
-				if(states(i,j)>0){
-					areas(states(i,j)) += 1;
-					if(canexp(i,j)==1)
-						borders(states(i,j)) += 1;
-				}
+	for(int i=0; i<states.rows(); i++){
+		for(int j=0; j<states.cols(); j++){
+			if(states(i,j)>0){
+				areas(states(i,j)) += 1;
+				if(canexp(i,j)==1)
+					borders(states(i,j)) += 1;
 			}
 		}
 	}
