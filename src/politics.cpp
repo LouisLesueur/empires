@@ -177,6 +177,7 @@ bool CityGraph::add_city(City cit){
 
 void CityGraph::update_road(int id1, int id2, int value){
 	Roads(id1, id2) = value;
+	Roads(id2, id1) = value;
 }
 
 
@@ -192,6 +193,23 @@ void CityGraph::update_pop(VectorXf inc_res){
 		city_nodes[i].update_pop(inc_res(i));
 }
 
+Vector2i CityGraph::possible_war(){
+	std::vector<Vector2i> relations;
+
+	for(int i=0; i<n_cities; i++){
+		for(int j=i; j<n_cities; j++){
+			if(Roads(i,j) == 2)
+				relations.push_back(Vector2i(i,j));
+		}
+	}
+
+	if(relations.size() > 2){
+		int idx = rand() % int(relations.size());
+		return relations[idx];
+	}
+
+	return Vector2i(-1, -1);
+} 
 
 //-------------------------------------------------------------
 
@@ -252,12 +270,54 @@ MatrixXf StateGraph::get_money(){
 	return out;
 } 
 
+void StateGraph::update_power(MatrixXi &states, MatrixXi &canexp){
+
+	VectorXf areas = VectorXf::Zero(n_states);
+	VectorXf borders = VectorXf::Zero(n_states);
+
+	for(int k=0; k<n_states; k++){
+		for(int i=0; i<states.rows(); i++){
+			for(int j=0; j<states.cols(); j++){
+				if(states(i,j)>0){
+					areas(states(i,j)) += 1;
+					if(canexp(i,j)==1)
+						borders(states(i,j)) += 1;
+				}
+			}
+		}
+	}
+
+	for(int k=0; k<n_states; k++)
+		state_nodes[k].update_power(areas(k)/(1+exp(0.035*borders(k)+1)));
+}
 
 void StateGraph::apply_taxes(VectorXf &money){
 	for(int i=0; i<n_states; i++)
 		money(i) = state_nodes[i].apply_taxes(money(i));
 }
 
+
+
+
+int StateGraph::war(int s1, int s2){
+	float P1 = state_nodes[s1].Power();
+	float P2 = state_nodes[s2].Power();
+	int proba = 0;
+	float dice_roll =rand()%1000;
+
+	if(P1 > P2){
+		proba = int((1-0.5*exp(-3.2*((P1/P2)-1)))*1000);
+		if(proba<dice_roll)
+			return s1;
+		return s2;
+	}
+	else{
+		proba = int((1-0.5*exp(-3.2*((P2/P1)-1)))*1000);
+		if(proba<dice_roll)
+			return s2;
+		return s1;
+	}
+}
 //--------------------------------------------------------------
 
 
@@ -306,7 +366,45 @@ void World::add_city_state(City cit, State stat){
 }
 
 void World::update_resources(){
-	Resources += (MatrixXf::Constant(height, width, 1)-Topography);
+	Resources += (MatrixXf::Constant(height, width, 1)-Topography).cwiseProduct(Resources);
+}
+
+
+void World::update_diplomacy(){
+
+	StateG->update_power(States, CanExpand);
+	
+	Vector2i war = CitiesG->possible_war();
+	if(war(0)==-1 && war(1)==-1)
+		return;
+
+	std::cout << "War between "<<war(0)<<" "<<war(1)<<std::endl;
+	int state1 = 0;
+	int state2 = 0;
+	for(int k=0; k<n_states; k++){
+		if(state_city(war(0), k)==1)
+			state1=k;
+		if(state_city(war(1), k)==1)
+			state2=k;
+	}
+
+	int winner = StateG->war(state1, state2);
+	int looser;
+
+	if(winner == state1)
+		looser = state2;
+	else
+		looser = state1;
+
+	state_city(war(0), winner) = 1;
+	state_city(war(1), winner) = 1;
+	state_city(war(0), looser) = 0;
+	state_city(war(1), looser) = 0;
+
+	CitiesG->update_road(war(0), war(1), 1);
+
+
+
 }
 	
 VectorXf World::resources_per_city(){
@@ -366,7 +464,7 @@ void World::expand_provinces(int thresh, int range_px, int new_cities_per_turn){
 			//Vector2i dir = DIRECTIONS.row(dir_id);
 			int i = expidx[k](0);
 			int j = expidx[k](1);
-			bool expanded = false;
+			bool border = false;
 			for(int l=0; l<8; l++){
 				Vector2i dir = DIRECTIONS.row(l);
 
@@ -375,13 +473,15 @@ void World::expand_provinces(int thresh, int range_px, int new_cities_per_turn){
 						Provinces(i+dir(0), j+dir(1))=Provinces(i,j);
 						CanExpand(i+dir(0), j+dir(1))=1;
 					}
+					else
+						border = true;
 				}
 			}
-			CanExpand(i,j) = 0;	
+			if(!border)
+				CanExpand(i,j) = 0;	
 		}
 	}
 
-	this-> genStateMap();
 }
 
 
@@ -449,7 +549,7 @@ cv::Mat World::get_pop_image(){
 }
 
 
-cv::Mat World::get_states_image(){
+cv::Mat World::get_states_image(bool show_boundaries){
 
 	//BGR !!!!!!!!!!!
 	cv::Mat img(height, width, CV_8UC3);
@@ -458,14 +558,16 @@ cv::Mat World::get_states_image(){
 		for(int j=0; j<width; j++){
 			if(Map(i,j) == 0){
 				img.at<cv::Vec3b>(i,j) = watercol;
-			} else if(Map(i,j) == 1 || Map(i,j) == 2){
+			} else if(Map(i,j) == 1){
 				img.at<cv::Vec3b>(i,j) = landcol;
 				if(States(i,j)>0){
 					img.at<cv::Vec3b>(i,j) = state_palette[States(i,j)];
-					if(CanExpand(i,j)==1)
+					if(show_boundaries && CanExpand(i,j)==1)
 						img.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
 				}
-			}
+			} else
+				img.at<cv::Vec3b>(i,j) = roadcol;
+
 			
 
 		}

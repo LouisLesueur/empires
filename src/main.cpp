@@ -37,10 +37,10 @@ int main( int argc, char** argv  )
 	string FIG_PATH = "figs/";
 	int step = 0;
 	int new_cities_per_turn = 10;
-	float coef = 0.2;
+	float coef = 0.5;
 	int range_px = 50*coef;
 
-	World world("../maps/europe/", 1000, 1000, coef);
+	World world("../maps/greece/", 1000, 1000, coef);
 
 	init_cities(100, world);
 
@@ -48,10 +48,14 @@ int main( int argc, char** argv  )
 
 	while (keyboard != 'q') {
 		cout<<"---------"<<endl;
-		cout<<"Cities "<<world.nCities()<<" States "<<world.nStates()<<endl;
+		cout<<"step: "<< step<< " Cities "<<world.nCities()<<" States "<<world.nStates()<<endl;
 		world.update_resources();
 		world.update_pop();
 		world.expand_provinces(10, range_px, new_cities_per_turn);
+		
+		if(step > 100)
+			world.update_diplomacy();
+		world.genStateMap();
 		cv::Mat out = world.get_states_image();
 		cv::Mat out_pop = world.get_pop_image();
 		cv::imshow("map", out);

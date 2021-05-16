@@ -7,6 +7,7 @@
 #include <Eigen/Core>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/eigen.hpp>
+#include <math.h>       /* exp */
 
 using namespace Eigen;
 
@@ -73,7 +74,7 @@ class CityGraph{
 			return out;
 		}
 
-		MatrixXi get_roads(){return Roads;}
+		Vector2i possible_war();
 };
 
 
@@ -89,6 +90,8 @@ class State{
 		float military; //Will increase attack and defense
 		float diplomacy; //Will increase diplomatic power
 
+		float power;
+
 	public:
 		State(std::string nm,
 		      float init_taxe=0.1, float init_wealth=2, 
@@ -98,6 +101,10 @@ class State{
 		float apply_taxes(float money);
 		void change_policy(float new_taxes, 
 				   float new_inf, float new_mil, float new_dip);
+
+		void update_power(float new_pow){power=new_pow;}
+		float Power(){return power;}
+
 };
 
 class StateGraph{
@@ -113,8 +120,10 @@ class StateGraph{
 
 		MatrixXf get_money();
 		void apply_taxes(VectorXf &money);
+		void update_power(MatrixXi &states, MatrixXi &canexp);
 		void add_state(State stat);
 		void update_dip(int s1, int s2, int value);
+		int war(int s1, int s2); //return winner's id
 };
 
 class World{
@@ -166,7 +175,7 @@ class World{
 		cv::Mat get_provinces_image();
 		cv::Mat get_pop_image();
 		cv::Mat get_res_image();
-		cv::Mat get_states_image();
+		cv::Mat get_states_image(bool show_boundaries=false);
 		
 };
 
