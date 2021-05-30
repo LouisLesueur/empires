@@ -39,7 +39,7 @@ int main( int argc, char** argv  )
 	string FIG_PATH = "figs/";
 	int step = 0;
 	int new_cities_per_turn = 10;
-	int new_wars_per_turn = 5;
+	int new_wars_per_turn = 1000;
 	float coef = 0.5;
 	int range_px = 50*coef;
 

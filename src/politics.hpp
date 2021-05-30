@@ -93,11 +93,10 @@ class State{
 		float infra_wealth;
 
 		//Budget
-		float infrastructure; //Will reduce inequalities
-		float military; //Will increase attack and defense
-		float diplomacy; //Will increase diplomatic power
 
-		Vector3f old_pol;
+		Vector3f budget; //0: infrastructures; 1: military; 2: diplomacy
+		Vector3f old_budget; //0: infrastructures; 1: military; 2: diplomacy
+
 
 		float power;
 
@@ -109,13 +108,14 @@ class State{
 		float apply_taxes(float inc_money);
 		void change_policy(float popdiff);
 		float MilWealth() {return military_wealth;}
+		float DipWealth() {return diplomacy_wealth;}
 		void update_power(float new_pow){power=new_pow;}
 		float Power(){return power;}
 
-		Vector3f policy() const{return Vector3f(infrastructure, military, diplomacy);}
+		Vector3f policy() {return budget;}
 };
 
-float affinity(const State& s1, const State& s2);
+float affinity(State& s1, State& s2);
 
 class StateGraph{
 	private:
@@ -133,8 +133,8 @@ class StateGraph{
 		void update_power(MatrixXi &states, MatrixXi &canexp);
 		void add_state(State stat);
 		void update_dip(int s1, int s2, int value);
+		void update_pol(const VectorXf &diffs);
 		int war(int s1, int s2); //return winner's id
-		State getState(int i) {return state_nodes[i];}
 };
 
 class World{
