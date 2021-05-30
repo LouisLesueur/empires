@@ -63,6 +63,7 @@ std::vector<Vector2i> gen_path(Vector2i init_pos, MatrixXi &terr, int size, cons
 //------------------------------------------------------------------------------------
 
 void City::update_pop(float inc_res){
+	old_pop = pop;
 	float death = 0.01;
 	float surplus = inc_res-pop;
         float natality = 0;
@@ -85,6 +86,7 @@ City::City(const Vector2i &pos,
 	name = nm;
 	position = pos;
 	pop = init_pop;
+	old_pop = 0;
 	gini = init_gini;
 	defence = init_def;
 	range=0;
@@ -216,6 +218,7 @@ State::State(std::string nm,
 	infrastructure = init_inf;
 	military = init_mil;
 	diplomacy = init_dip;
+	old_pol << 0,0,0;
 }
 
 
@@ -227,12 +230,24 @@ float State::apply_taxes(float inc_money){
 	return inc_money*=(1-taxe_rate);
 }
 
-void State::change_policy(float new_taxes, 
-		float new_inf, float new_mil, float new_dip){
-	taxe_rate = new_taxes;
-	infrastructure = new_inf;
-	military = new_mil;
-	diplomacy = new_dip;
+void State::change_policy(float popdiff){
+
+	float lr = 0.001;
+	float new_inf = infrastructure + lr*(popdiff / (infrastructure - old_pol[0])); 
+	float new_mil = military + lr*(popdiff / (military - old_pol[1])); 
+	float new_dip =  diplomacy + lr*(popdiff /(diplomacy - old_pol[2]));	
+
+	float pol_sum = new_dip + new_inf + new_dip;
+	old_pol << infrastructure, military, diplomacy;
+
+	
+	infrastructure = new_inf/pol_sum;
+	military = new_mil/pol_sum;
+	diplomacy = new_dip/pol_sum;
+}
+
+float affinity(const State& s1, const State& s2){
+	return s1.policy().dot(s2.policy());
 }
 
 //-----------------------------------------------------------
@@ -268,10 +283,9 @@ void StateGraph::update_power(MatrixXi &states, MatrixXi &canexp){
 	}
 
 	for(int k=0; k<n_states; k++){
-
 		float territory_power = areas(k)/(1+exp(0.00035*borders(k)+1));
-		//float invests_power = state_nodes[k].military_wealth; 
-		state_nodes[k].update_power(areas(k)/(1+exp(0.00035*borders(k)+1)));
+		float invests_power = 1-exp(-pow(state_nodes[k].MilWealth(),2)/1e20);
+		state_nodes[k].update_power(invests_power*territory_power);
 		}
 }
 
@@ -285,10 +299,13 @@ float StateGraph::apply_taxes(int i, float inc_monney){
 int StateGraph::war(int s1, int s2){
 	float P1 = state_nodes[s1].Power();
 	float P2 = state_nodes[s2].Power();
+	
+	float aff = affinity(state_nodes[s1], state_nodes[s2]);
+	
 	int proba = 0;
 	float dice_roll =rand()%1000;
 
-	if(P1 > P2){
+	if(P1 > P2 && aff <= 0){
 		proba = int((1-0.5*exp(-3.2*((P1/P2)-1)))*1000);
 		if(proba<dice_roll)
 			return s1;
@@ -391,6 +408,14 @@ void World::update_diplomacy(int new_wars_per_turn){
 
 }
 
+
+VectorXf World::popdiff_per_state(){
+	VectorXf state_pop = VectorXf::Zero(n_states);
+	for(int i=0; i<CitiesG->nCities(); i++)
+		state_pop[city_T_state[i]] += (CitiesG->get_city(i).Pop()-CitiesG->get_city(i).OldPop());
+	return state_pop;
+}
+
 	
 VectorXf World::resources_per_city(){
 
@@ -416,6 +441,14 @@ void World::update_pop(){
 	}
 
 	CitiesG->update_pop(res);
+}
+
+
+
+void World::update_policies(){
+	VectorXf popdiffs = this->popdiff_per_state();
+	for(int i=0; i<StateG->nStates(); i++)
+		StateG->getState(i).change_policy(popdiffs(i));
 }
 
 void World::expand_provinces(int thresh, int range_px, int new_cities_per_turn){

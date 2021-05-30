@@ -4,6 +4,8 @@
 #include <time.h>
 
 
+
+
 using namespace std;
 
 
@@ -33,7 +35,7 @@ void init_cities(int n, World& world){
 
 int main( int argc, char** argv  )
 {
-	bool SAVE_FIG = true;
+	bool SAVE_FIG = false;
 	string FIG_PATH = "figs/";
 	int step = 0;
 	int new_cities_per_turn = 10;
@@ -54,11 +56,13 @@ int main( int argc, char** argv  )
 		world.update_pop();
 		world.expand_provinces(5, range_px, new_cities_per_turn);
 		
+		if(step > 1)
+			world.update_policies();
 		world.update_diplomacy(new_wars_per_turn);
 		cv::Mat out = world.get_states_image(false, true, false);
-		//cv::Mat out_pop = world.get_pop_image();
-		//cv::imshow("map", out);
-		//cv::imshow("pop", out_pop);
+		cv::Mat out_pop = world.get_pop_image();
+		cv::imshow("map", out);
+		cv::imshow("pop", out_pop);
 
 		std::stringstream stream;
 		stream << std::setw(10) << std::setfill('0') << step;
@@ -68,6 +72,7 @@ int main( int argc, char** argv  )
 			cv::imwrite(FIG_PATH+"out_"+step_string+".png", out);
 		step++;
 		keyboard = cv::waitKey(1);
+
 	}
 
 	cv::destroyWindow("map");

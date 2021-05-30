@@ -33,6 +33,7 @@ class City{
 		Vector2i position;
 		std::string name;
 		float pop;
+		float old_pop;
 		float gini;
 		float range;
 		float defence;
@@ -43,6 +44,7 @@ class City{
 		void update_range(float rge);
 
 		float Pop(){return pop;}
+		float OldPop(){return old_pop;}
 		float Gini(){return gini;}
 		float Range(){return range;}
 		float Def(){return defence;}
@@ -95,6 +97,8 @@ class State{
 		float military; //Will increase attack and defense
 		float diplomacy; //Will increase diplomatic power
 
+		Vector3f old_pol;
+
 		float power;
 
 	public:
@@ -103,13 +107,15 @@ class State{
 		      float init_inf=0.33, float init_mil=0.33, float init_dip=0.33);
 
 		float apply_taxes(float inc_money);
-		void change_policy(float new_taxes, 
-				   float new_inf, float new_mil, float new_dip);
-
+		void change_policy(float popdiff);
+		float MilWealth() {return military_wealth;}
 		void update_power(float new_pow){power=new_pow;}
 		float Power(){return power;}
 
+		Vector3f policy() const{return Vector3f(infrastructure, military, diplomacy);}
 };
+
+float affinity(const State& s1, const State& s2);
 
 class StateGraph{
 	private:
@@ -128,6 +134,7 @@ class StateGraph{
 		void add_state(State stat);
 		void update_dip(int s1, int s2, int value);
 		int war(int s1, int s2); //return winner's id
+		State getState(int i) {return state_nodes[i];}
 };
 
 class World{
@@ -171,8 +178,10 @@ class World{
 		void add_city_state(City cit, State stat);
 		void update_resources();
 		void update_pop();
+		void update_policies();
 		void update_diplomacy(int new_wars_per_turn );
 		VectorXf resources_per_city();
+		VectorXf popdiff_per_state();
 		void expand_provinces(int thresh, int range_px, int new_cities_per_turn);
 		World(std::string path, int cit, int stat, float coef=1);
 
